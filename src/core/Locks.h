@@ -1,9 +1,10 @@
-##############################################
-# Author: Jun Jiang - jiangjun4@sina.com
-# Last modified:	2016-09-05 16:28
-# Filename:		Locks.h
-# Description: 
-##############################################
+/*********************************************
+* Author: Jun Jiang - jiangjun4@sina.com
+* Created: 2016-09-06 20:55
+* Last modified: 2016-09-06 20:55
+* Filename: Locks.h
+* Description: 
+**********************************************/
 
 #ifndef CCML_CORE_LOCKS_H
 #define CCML_CORE_LOCKS_H
@@ -31,9 +32,9 @@ public:
     }
 
     template <class T>
-    void wait(Predicate pred){
+    void wait(T t){
         std::unique_lock<std::mutex> lock(_mutex);
-        std::condition_variable::wait(lock, pred);
+        std::condition_variable::wait(lock, t);
     }
 
     std::mutex* get_mutex(){

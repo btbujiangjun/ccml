@@ -1,15 +1,15 @@
-##############################################
-# Author: Jun Jiang - jiangjun4@sina.com
-# Last modified:	2016-09-05 16:29
-# Filename:		Thread.h
-# Description: 
-##############################################
+/*********************************************
+* Author: Jun Jiang - jiangjun4@sina.com
+* Created: 2016-09-06 20:56
+* Last modified: 2016-09-06 20:56
+* Filename: Thread.h
+* Description: 
+**********************************************/
 
 #ifndef CCML_CORE_THREAD_H
 #define CCML_CORE_THREAD_H
 
 #include <thread>
-#include "Logging.h"
 #include "Queue.h"
 #include "Locks.h"
 
@@ -23,7 +23,7 @@ public:
     virtual ~Thread(){}
 
     void start(){
-        _thread.reset(new std::thread([this](){this->run()}));
+        _thread.reset(new std::thread([this](){this->run();}));
     }
     void detach(){
         _thread->detach();
@@ -31,9 +31,9 @@ public:
     void join(){
         _thread->join();
     }
-    virtual run() = 0;
+    virtual void run() = 0;
 protected:
-    std::unique_ptr<thread> _thread;
+    std::unique_ptr<std::thread> _thread;
 };//end Thread
 
 class ThreadWorker : protected Thread{
@@ -44,14 +44,14 @@ public:
         start();
     }
     ~ThreadWorker(){
-        if(!_stoping){
+        if(!_stopping){
             wait();
             stop();
         }
     }
 
     void wait(){
-        _lc.wait([this]{return _empty});
+        _lc.wait([this]{return _empty;});
     }
     void stop(){
         _stopping = true;
@@ -77,7 +77,7 @@ protected:
             }
             func();
             if(_jobs.empty()){
-                _lc.notity_all([this]{_empty = true});
+                _lc.notify_all([this]{_empty = true;});
             }
         }
     }
