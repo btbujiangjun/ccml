@@ -41,7 +41,7 @@ public:
         T element;
         swap(_elements.front(), element);
 
-        _elements.pop_front;
+        _elements.pop_front();
         _num_elements--;
         if(_num_elements == 0){
             _cv.notify_all();

@@ -56,8 +56,9 @@ public:
     ::ccml::logging::LogMessage(__FILE__, __LINE__, ::ccml::logging::FATAL)
 
 #define CC_LOG(severity) _CC_LOG_##severity
+#define LOG(severity) CC_LOG(severity)
 
-#define PREDICT_TRUE(x) (__builtin__expect(!!(x), 1))
+#define PREDICT_TRUE(x) (__builtin_expect(!!(x), 1))
 #define PREDICT_FALSE(x) (__builtin_expect(x, 0))
 
 #define CC_CHECK(condition) \
