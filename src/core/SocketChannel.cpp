@@ -7,6 +7,7 @@
 **********************************************/
 
 #include "SocketChannel.h"
+#include "../utils/Logging.h"
 #include <unistd.h>
 
 namespace ccml{
@@ -43,7 +44,7 @@ size_t SocketChannel::write(const void* buf, size_t size){
     return total;
 }
 
-templete<class IOFUNC, class SOCKET>
+template<class IOFUNC, class SOCKET>
 static size_t readwritev(IOFUNC io_func, SOCKET socket, iovec* iovs, int num_iovs, int max_iovs, const std::string& peer_name){
     int current_iov = 0;
     size_t total = 0;
@@ -56,8 +57,8 @@ static size_t readwritev(IOFUNC io_func, SOCKET socket, iovec* iovs, int num_iov
     size_t current_iov_size_done = 0;
 
     while(size < total){
-        ssize_t length = iofunc(socket, &iovs[current_iov], std::min(num_iovs- current_iov, maxiovs));
-        CC_CHECK(length > 0) << " peer = " << _peer_name << " current_iov = " << current_iov << " num_iov = " << num_iovs << " iovs[current_iov].base = " << iovs[current_iov].iov_base << " iovs[current_iov].iov_len = " << iovs[current_iov].iov_len;
+        ssize_t length = io_func(socket, &iovs[current_iov], std::min(num_iovs- current_iov, max_iovs));
+        CC_CHECK(length > 0) << " peer = " << peer_name << " current_iov = " << current_iov << " num_iov = " << num_iovs << " iovs[current_iov].base = " << iovs[current_iov].iov_base << " iovs[current_iov].iov_len = " << iovs[current_iov].iov_len;
         size += length;
 
         iovs[current_iov].iov_base = (void*)((char*)iovs[current_iov].iov_base - current_iov_size_done);
@@ -99,7 +100,7 @@ std::unique_ptr<MessageReader> SocketChannel::read_message(){
     CC_CHECK(length == sizeof(header));
 
     std::unique_ptr<MessageReader> message_reader(new MessageReader(this, header.num_iovs));
-    CC_CHECK_QE(message_reader->get_total_length() + sizeof(header) + message_reader->get_num_blocks() * sizeof(size_t), (size_t)header.total_length) << " total_length = " << message_reader->get_total_length() << " num_blocks = " << message_reader->get_num_blocks();
+    CC_CHECK_EQ(message_reader->get_total_length() + sizeof(header) + message_reader->get_num_blocks() * sizeof(size_t), (size_t)header.total_length) << " total_length = " << message_reader->get_total_length() << " num_blocks = " << message_reader->get_num_blocks();
     return message_reader;
 }
 
@@ -108,15 +109,15 @@ void SocketChannel::write_message(const std::vector<struct iovec>& user_iovs){
     header.num_iovs = user_iovs.size();
 
     std::vector<size_t> iov_lengths;
-    iov_lengths.reverse(user_iovs.size());
+    iov_lengths.reserve(user_iovs.size());
     for(auto& iov : user_iovs){
-        iov_lengths.push_backs(iov.iov_len);
+        iov_lengths.push_back(iov.iov_len);
     }
 
     std::vector<iovec> iovs;
     iovs.reserve(user_iovs.size()+2);
     iovs.push_back({&header, sizeof(header)});
-    iovs.push_back({&iov_lengths[0], sizeof(iov_lengths[0]) * header.num_iovs});
+    iovs.push_back({&iov_lengths[0], sizeof(iov_lengths[0]) * (size_t)header.num_iovs});
     iovs.insert(iovs.end(), user_iovs.begin(), user_iovs.end());
 
     header.total_length = 0;
@@ -128,7 +129,7 @@ void SocketChannel::write_message(const std::vector<struct iovec>& user_iovs){
 }//end SocketChannel
 
 
-MessageReader::MessageReader(SocketChannel* channel, size_t num_blocks) : _channel(channel), _block_lengths(num_blocks), _current_block_index(0) {
+MessageReader::MessageReader(SocketChannel* channel, size_t num_blocks) : _channel(channel), _num_blocks(num_blocks), _current_block_index(0) {
     size_t size = num_blocks * sizeof(_num_blocks[0]);
     CC_CHECK(_channel->read(&_num_blocks[0], size) == size);
 }
@@ -151,7 +152,7 @@ void MessageReader::read_blocks(const std::vector<void*>& bufs){
 void MessageReader::read_next_block(void* buf){
     CC_CHECK_LT(_current_block_index, _num_blocks.size());
     CC_CHECK(_channel->read(buf, get_next_block_length()) == get_next_block_length());
-    ++current_block_index;
+    ++_current_block_index;
 }
 
 
