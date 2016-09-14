@@ -10,6 +10,7 @@
 #define CCML_CORE_SOCKETCHANNEL_H
 
 #include "../utils/Logging.h"
+#include <memory>
 #include <vector>
 #include <sys/uio.h>
 
