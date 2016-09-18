@@ -41,7 +41,9 @@ void ProtoServer::register_service_function_implement(const std::string& functio
 }
 
 
-void ProtoClient::send(const char* function_name, const google::protobuf::MessageLite& proto, const std::vector<iovec>& user_iov){
+void ProtoClient::send(const char* function_name,
+                       const google::protobuf::MessageLite& proto,
+                       const std::vector<iovec>& user_iov){
     std::string proto_string;
     CC_CHECK(proto.SerializeToString(&proto_string));
     std::vector<iovec> iovs;
@@ -56,11 +58,14 @@ void ProtoClient::send(const char* function_name, const google::protobuf::Messag
 
 std::unique_ptr<MessageReader> ProtoClient::recv(google::protobuf::MessageLite* proto){
     std::vector<iovec> iovs;
+    
     std::unique_ptr<MessageReader> message_reader = _channel->read_message();
     CC_CHECK_GE(message_reader->get_num_blocks(), (size_t)1);
     std::string str(message_reader->get_next_block_length(), 0);
     message_reader->read_next_block(&str[0]);
+
     CC_CHECK(proto->ParseFromString(str));
+    
     return message_reader;
 }
 

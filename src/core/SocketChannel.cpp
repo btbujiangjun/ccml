@@ -45,7 +45,12 @@ size_t SocketChannel::write(const void* buf, size_t size){
 }
 
 template<class IOFUNC, class SOCKET>
-static size_t readwritev(IOFUNC io_func, SOCKET socket, iovec* iovs, int num_iovs, int max_iovs, const std::string& peer_name){
+static size_t readwritev(IOFUNC io_func,
+                         SOCKET socket,
+                         iovec* iovs,
+                         int num_iovs,
+                         int max_iovs,
+                         const std::string& peer_name){
     int current_iov = 0;
     size_t total = 0;
 
@@ -58,7 +63,12 @@ static size_t readwritev(IOFUNC io_func, SOCKET socket, iovec* iovs, int num_iov
 
     while(size < total){
         ssize_t length = io_func(socket, &iovs[current_iov], std::min(num_iovs- current_iov, max_iovs));
-        CC_CHECK(length > 0) << " peer = " << peer_name << " current_iov = " << current_iov << " num_iov = " << num_iovs << " iovs[current_iov].base = " << iovs[current_iov].iov_base << " iovs[current_iov].iov_len = " << iovs[current_iov].iov_len;
+        CC_CHECK(length > 0) << 
+            " peer = " << peer_name << 
+            " current_iov = " << current_iov << 
+            " num_iov = " << num_iovs << 
+            " iovs[current_iov].base = " << iovs[current_iov].iov_base << 
+            " iovs[current_iov].iov_len = " << iovs[current_iov].iov_len;
         size += length;
 
         iovs[current_iov].iov_base = (void*)((char*)iovs[current_iov].iov_base - current_iov_size_done);
@@ -129,7 +139,8 @@ void SocketChannel::write_message(const std::vector<struct iovec>& user_iovs){
 }//end SocketChannel
 
 
-MessageReader::MessageReader(SocketChannel* channel, size_t num_blocks) : _channel(channel), _num_blocks(num_blocks), _current_block_index(0) {
+MessageReader::MessageReader(SocketChannel* channel, size_t num_blocks) :
+    _channel(channel), _num_blocks(num_blocks), _current_block_index(0) {
     size_t size = num_blocks * sizeof(_num_blocks[0]);
     CC_CHECK(_channel->read(&_num_blocks[0], size) == size);
 }

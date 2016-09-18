@@ -22,8 +22,9 @@ class MessageReader;
 class SocketChannel{
 public:
 
-    SocketChannel(int socket, const std::string& peer_name) : _tcp_socket(socket), _peer_name(peer_name){
-    }
+    SocketChannel(int socket, const std::string& peer_name) : 
+        _tcp_socket(socket), _peer_name(peer_name){}
+
     ~SocketChannel();
 
     const std::string& get_peer_name() const{
@@ -54,6 +55,7 @@ protected:
 class MessageReader{
 public:
     MessageReader(SocketChannel* channel, size_t num_iovs);
+
     ~MessageReader(){
         CC_CHECK_EQ(_current_block_index, _num_blocks.size());
     }

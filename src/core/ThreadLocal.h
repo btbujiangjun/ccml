@@ -11,6 +11,7 @@
 
 namespace ccml{
 namespace core{
+
 template <class T>
 class ThreadLocal{
 public:

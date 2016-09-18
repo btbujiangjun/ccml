@@ -30,7 +30,8 @@ public:
     typedef std::function<void(const std::vector<iovec>& output_iovs)> ResponseCallback;
 
 protected:
-    virtual void handle_request(std::unique_ptr<MessageReader> message_reader, ResponseCallback callback) = 0;
+    virtual void handle_request(std::unique_ptr<MessageReader> message_reader,
+            ResponseCallback callback) = 0;
 
     std::unique_ptr<SocketChannel> create_channel(int sock, const std::string& peer_name){
         return std::unique_ptr<SocketChannel>(new SocketChannel(sock, peer_name));
@@ -38,8 +39,8 @@ protected:
 
 
     friend class SocketWorker;
-    int _port;
     int _socket;
+    int _port;
     std::string _addr;
     int _max_pending_connections;
     bool _stopping;
@@ -63,8 +64,10 @@ protected:
 
 class SocketWorker : public Thread {
 public:
-    SocketWorker(std::unique_ptr<SocketChannel>&& channel, SocketServer* server) : _channel(std::move(channel)), _server(server){
+    SocketWorker(std::unique_ptr<SocketChannel>&& channel, SocketServer* server) :
+        _channel(std::move(channel)), _server(server){
     }
+
     virtual ~SocketWorker(){}
 
     virtual void run();

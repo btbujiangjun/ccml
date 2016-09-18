@@ -19,18 +19,20 @@ namespace ccml{
 namespace core{
 class ProtoServer : public SocketServer{
 public:
-    ProtoServer(const std::string& addr, int port) : SocketServer(addr, port){
-    }
+    ProtoServer(const std::string& addr, int port) : SocketServer(addr, port){}
 
     typedef std::function<void(const google::protobuf::MessageLite& proto_out)> ProtoResponseCallback;
+
     template <class T>
-    void register_service_function(const std::string& function_name, std::function<void(const T& request, ProtoResponseCallback callback)> function);
+    void register_service_function(const std::string& function_name,
+                                   std::function<void(const T& request, ProtoResponseCallback callback)> function);
 
     typedef std::function<void(const google::protobuf::MessageLite& proto_out, const std::vector<iovec>& output_iovs)> ProtoResponseCallbackEx;
+
     template <class T>
-    void register_service_function_ex(\
-            const std::string& function_name, \
-            std::function<void(const T&, std::unique_ptr<MessageReader> messager_reader, ProtoResponseCallbackEx callback)> function);
+    void register_service_function_ex(const std::string& function_name,
+                                      std::function<void(const T&, std::unique_ptr<MessageReader> messager_reader,
+                                      ProtoResponseCallbackEx callback)> function);
 
 protected:
     virtual void handle_request(std::unique_ptr<MessageReader> message_reader, ResponseCallback callback);
@@ -49,27 +51,37 @@ protected:
 
 class ProtoClient : public SocketClient{
 public:
-    ProtoClient(const std::string& server_addr, int server_port) : SocketClient(server_addr, server_port){
-    }
+    ProtoClient(const std::string& server_addr, int server_port) : SocketClient(server_addr, server_port){}
 
-    void send(const char* function_name, const google::protobuf::MessageLite& proto, const std::vector<iovec>& ivo = std::vector<iovec>());
+    void send(const char* function_name,
+              const google::protobuf::MessageLite& proto,
+              const std::vector<iovec>& ivo = std::vector<iovec>());
 
     std::unique_ptr<MessageReader> recv(google::protobuf::MessageLite* proto);
 
-    std::unique_ptr<MessageReader> send_recv(const char* function_name, const google::protobuf::MessageLite& proto_in, google::protobuf::MessageLite* proto_out){
+    std::unique_ptr<MessageReader> send_recv(const char* function_name,
+                                             const google::protobuf::MessageLite& proto_in,
+                                             google::protobuf::MessageLite* proto_out){
         send(function_name, proto_in);
+
         return recv(proto_out);
     }
 
-    std::unique_ptr<MessageReader> send_recv(const char* function_name, const google::protobuf::MessageLite& proto_in, const std::vector<iovec>& iovs, google::protobuf::MessageLite* proto_out){
+    std::unique_ptr<MessageReader> send_recv(const char* function_name,
+                                             const google::protobuf::MessageLite& proto_in,
+                                             const std::vector<iovec>& iovs,
+                                             google::protobuf::MessageLite* proto_out){
         send(function_name, proto_in, iovs);
+
         return recv(proto_out);
     }
 };//class ProtoClient
 
 
 template<class T>
-void ProtoServer::register_service_function_ex(const std::string& function_name, std::function<void(const T&, std::unique_ptr<MessageReader> message_reader, ProtoResponseCallbackEx callback)> func){
+void ProtoServer::register_service_function_ex(const std::string& function_name,
+                                               std::function<void(const T&, std::unique_ptr<MessageReader> message_reader,
+                                               ProtoResponseCallbackEx callback)> func){
     auto f = [func](std::unique_ptr<MessageReader> message_reader, ResponseCallback callback){
         T request;
         std::string str(message_reader->get_next_block_length(), 0);
@@ -89,7 +101,8 @@ void ProtoServer::register_service_function_ex(const std::string& function_name,
 }
 
 template <class T>
-void ProtoServer::register_service_function(const std::string& function_name, std::function<void(const T&, ProtoResponseCallback callback)> func){
+void ProtoServer::register_service_function(const std::string& function_name,
+                                            std::function<void(const T&, ProtoResponseCallback callback)> func){
     auto f = [func](std::unique_ptr<MessageReader> message_reader, ResponseCallback callback){
         T request;
         std::string str(message_reader->get_next_block_length(), 0);
@@ -104,6 +117,7 @@ void ProtoServer::register_service_function(const std::string& function_name, st
             iovs.push_back({&out[0], out.size()});
             callback(iovs);
         };
+
         func(request, pcob);
     };
     register_service_function_implement(function_name, f);

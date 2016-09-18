@@ -36,7 +36,7 @@ void SocketWorker::run(){
 
         auto callback = [this](const std::vector<iovec>& output_iovs){
             _channel->write_message(output_iovs);
-    };
+        };
 
         _server->handle_request(std::move(message_reader), callback);
     }
@@ -44,7 +44,8 @@ void SocketWorker::run(){
     LOG(INFO) << "worker begin to finish, peer = " << _channel->get_peer_name();
 }
 
-SocketServer::SocketServer(const std::string &addr, int port) : _addr(addr), _port(port){
+SocketServer::SocketServer(const std::string &addr, int port) :
+    _addr(addr), _port(port){
     _stopping = false;
     _socket = 0;
     _max_pending_connections = 100;
@@ -57,6 +58,7 @@ SocketServer::~SocketServer(){
     }
     this->join();
 }
+
 void SocketServer::tcp_server(){
     int newsockfd;
     socklen_t client_len;
@@ -79,7 +81,8 @@ void SocketServer::tcp_server(){
 
     set_option(_socket);
 
-    CC_CHECK(bind(_socket, (struct sockaddr*) &server_addr, sizeof(server_addr)) >= 0) << "ERROR on binding " <<_addr;
+    CC_CHECK(bind(_socket, (struct sockaddr*) &server_addr, sizeof(server_addr)) >= 0) << \
+        "ERROR on binding " <<_addr;
 
     listen(_socket, _max_pending_connections);
     client_len = sizeof(client_addr);
@@ -116,7 +119,8 @@ SocketClient::SocketClient(const std::string &server_addr, int server_port){
 
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
     CC_CHECK(sockfd >= 0) << "ERROR opening socket.";
-    CC_CHECK_EQ(0, gethostbyname_r(server_addr.c_str(), &hostinfo, buf, sizeof(buf), &server, &error_return)) << "ERROR, no such host: " << server_addr << " ret= " << error_return;
+    CC_CHECK_EQ(0, gethostbyname_r(server_addr.c_str(), &hostinfo, buf, sizeof(buf), &server, &error_return)) << \
+        "ERROR, no such host: " << server_addr << " ret= " << error_return;
     CC_CHECK(server) << "gethostbyname_r error.";
 
     memset((char*)&server_addr, 0, sizeof(server_addr));
@@ -126,15 +130,13 @@ SocketClient::SocketClient(const std::string &server_addr, int server_port){
 
     set_option(sockfd);
 
-    CC_CHECK(connect(sockfd, (sockaddr*)&serv_addr, sizeof(serv_addr)) >= 0) << "ERROR connecting to " << server_addr;
+    CC_CHECK(connect(sockfd, (sockaddr*)&serv_addr, sizeof(serv_addr)) >= 0) << \
+        "ERROR connecting to " << server_addr;
     _channel.reset(new SocketChannel(sockfd, server_addr));
 }
 
 
 void set_option(int sockfd){
-    //int send_size = FLAGS_sock_send_buf_size;
-    //int recv_size = FLAGS_sock_recv_buf_size;
-
     int send_size = 1024 * 1024 * 40;
     int recv_size = 1024 * 1024 * 40;
     bool FLAGS_small_messages = false;
