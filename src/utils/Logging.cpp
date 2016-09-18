@@ -22,6 +22,7 @@ static std::string join(const std::string& part1, const std::string& part2){
     if(!part2.empty() && part2.front() == sep){
         return part2;
     }
+
     std::string return_value;
     return_value.reserve(part1.size() + part2.size() + 1);
     return_value = part1;
@@ -29,6 +30,7 @@ static std::string join(const std::string& part1, const std::string& part2){
         return_value += sep;
     }
     return_value += part2;
+
     return return_value;
 }
 
@@ -55,7 +57,9 @@ static inline int env2int(const char* env_name, int default_value = 0){
     }
 }
 
-static inline int env2index(const char* env_name, const std::vector<std::string>& options, int default_value){
+static inline int env2index(const char* env_name,
+                            const std::vector<std::string>& options,
+                            int default_value){
     char* env_value = getenv(env_name);
     if(env_value != nullptr){
         for(size_t i = 0; i < options.size(); i++){
@@ -107,11 +111,15 @@ static void initialize_log_fds(char* argc){
 }
 
 
-LogMessage::LogMessage(const char* name, int line, int severity) : _name(name), _line(line), _severity(severity){
-}
+LogMessage::LogMessage(const char* name,
+                       int line,
+                       int severity) : 
+    _name(name), _line(line), _severity(severity){}
+
 LogMessage::~LogMessage(){
     this->generate_log_message();
 }
+
 void LogMessage::generate_log_message(){
     if(!g_log_inited){
         fprintf(stderr, "%c %s:%d] %s\n", "IWEF"[_severity], _name, _line, str().c_str());
@@ -123,8 +131,9 @@ void LogMessage::generate_log_message(){
 }
 
 
-LogMessageFatal::LogMessageFatal(const char* file, int line):LogMessage(file, line, FATAL){
-}
+LogMessageFatal::LogMessageFatal(const char* file, int line) : 
+    LogMessage(file, line, FATAL){}
+
 LogMessageFatal::~LogMessageFatal(){
     generate_log_message();
     g_failure_function_ptr();

@@ -23,7 +23,10 @@ const int NUM_SEVERITIES = 4;
 class LogMessage : public std::basic_ostringstream<char>{
 public:
 
-    LogMessage(const char* name, int line, int severity);
+    LogMessage(const char* name,
+               int line,
+               int severity);
+
     ~LogMessage();
 
 protected:
@@ -38,6 +41,7 @@ private:
 class LogMessageFatal : public LogMessage{
 public:
     LogMessageFatal(const char* file, int line) __attribute__((cold));
+
     ~LogMessageFatal() __attribute__((noreturn));
 };//class LogMessageFatal
 
