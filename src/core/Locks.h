@@ -15,6 +15,47 @@
 namespace ccml{
 namespace core{
 
+/*
+ * A simple read-write lock.
+ * The RWLock allows a numbers of readers or at most onewriter at any point in time.
+ * The RWlock disable copy.
+ */
+class RWLock{
+public:
+     RWLock(){
+        pthread_rwlock_init(&_rwlock, NULL);
+     }
+     RWLock(const RWLock&) = delete;
+     RWLock& operator=(const RWLock&) = delete;
+
+     ~RWLock(){
+        pthread_rwlock_destroy(&_rwlock);
+     }
+
+     /*
+      * lock on write mode.
+      * the method will block the thread, if failed to get the lock.
+      */
+     void lock(){
+        pthread_rwlock_wrlock(&_rwlock);
+     }
+
+     /*
+      * lock on read mode.
+      * if another thread is writing, it can't get the lock, and will block the thread.
+      */
+     void lock_shared(){
+         pthread_rwlock_rdlock(&_rwlock);
+     }
+
+     void unlock(){
+        pthread_rwlock_unlock(&_rwlock);
+     }
+
+protected:
+     pthread_rwlock_t _rwlock;
+};//class RWLock
+
 class LockedCondition : public std::condition_variable{
 public:
     template <class T>
