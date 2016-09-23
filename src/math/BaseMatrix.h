@@ -3,14 +3,21 @@
 * Created: 2016-09-20 12:04
 * Last modified: 2016-09-20 12:04
 * Filename: BaseMatrix.h
-* Description: 
-**********************************************/
+*********************************************/
 #ifndef CCML_MATH_BASEMATRIX_H
 #define CCML_MATH_BASEMATRIX_H
 
-
+#include "utils/TypeDefs.h"
+#include <cstddef>
+#include <stdint.h>
 namespace ccml{
 namespace math{
+
+
+#define CAL_MATRIX_START_ADDRESS(address, height, width, ld, col, row) \
+    CC_CHECK_LE(col, width); \
+    CC_CHECK_LE(row, heigth); \
+    address += row * ld + col;
 
 class MatrixOffset{
 public:
@@ -47,6 +54,13 @@ public:
 template<class T>
 class BaseMatrixT{
 public:
+    size_t _height;
+    size_t _width;
+    size_t _stride;
+    T _data;
+    bool _trans;
+
+public:
     BaseMatrixT(size_t height,
                size_t width,
                T* data,
@@ -81,62 +95,63 @@ public:
         _data = data;
     }
 
-    template <class C>
-    int apply_unary(C c);
-    template <class C>
-    int apply_unary(C c, 
+    template <class Op>
+    int apply_unary(Op op);
+    template <class Op>
+    int apply_unary(Op op, 
                     int num_rows,
                     int num_cols,
                     MatrixOffset& offset);
     
-    template <class C>
-    int apply_binary(C c, BaseMatrixT& b);
-    template <class C, class RowVector, class ColVector>
-    int apply_binary(C c,
+    template <class Op>
+    int apply_binary(Op op, BaseMatrixT& b);
+
+    template <class Op, class RowVector, class ColVector>
+    int apply_binary(Op op,
                      BaseMatrixT& b,
                      int num_rows,
                      int num_cols,
-                     MaxtrixOffset& offset,
+                     MatrixOffset& offset,
                      RowVector,
                      ColVector);
-    template<class C>
-    int apply_binary(C c,
+    template<class Op>
+    int apply_binary(Op op,
                      BaseMatrixT& b,
                      int num_rows,
                      int num_cols,
                      MatrixOffset& offset);
 
-    template<class C>
-    int apply_ternary(C c,
-                      BaseMatrixT& b1,
-                      BaseMatrixT& b2);
-    template<class C, class RowVector, class ColVector>
-    int apply_ternary(C c,
-                      BaseMatrixT& b1,
-                      BaseMatrixT& b2,
+    template<class Op>
+    int apply_ternary(Op op,
+                      BaseMatrixT& b,
+                      BaseMatrixT& c);
+    template<class Op, class RowVector, class ColVector>
+    int apply_ternary(Op op,
+                      BaseMatrixT& b,
+                      BaseMatrixT& c,
                       int num_rows,
                       int num_cols,
                       MatrixOffset& offset,
                       RowVector,
                       ColVector);
-    template<class C>
-    int apply_ternary(class c,
-                      BaseMatrixT& b1,
-                      BaseMatrixT& b2,
+    template<class Op>
+    int apply_ternary(Op op,
+                      BaseMatrixT& b,
+                      BaseMatrixT& c,
                       int num_rows,
                       int num_cols,
                       MatrixOffset& offset);
 
-    template<class C>
-    int apply_quaternary(C c,
-                         BaseMatrixT& b1,
-                         BaseMatrixT& b2,
-                         BaseMatrixT& b3);
-    template<class C>
-    int apply_quaternary(C c,
-                         BaseMatrixT& b1,
-                         BaseMatrixT& b2,
-                         BaseMatrixT& b3,
+    template<class Op>
+    int apply_quaternary(Op op,
+                         BaseMatrixT& b,
+                         BaseMatrixT& c,
+                         BaseMatrixT& d);
+    template<class Op>
+    int apply_quaternary(Op op,
+                         BaseMatrixT& b,
+                         BaseMatrixT& c,
+                         BaseMatrixT& d,
                          int num_rows,
                          int num_cols,
                          MatrixOffset& offset);
@@ -146,8 +161,8 @@ public:
     int aggregate(Agg agg,
                   Op op,
                   Saver sv,
-                  BaseMatrixT& b1,
-                  BaseMatrixT& b2,
+                  BaseMatrixT& b,
+                  BaseMatrixT& c,
                   int num_rows,
                   int num_cols,
                   MatrixOffset& offset,
@@ -198,7 +213,7 @@ public:
     void sign(BaseMatrixT& b);
     void zero();
 
-    void zero_at _offset(int64_t col_offset, int64_t num_cols);
+    void zero_at_offset(int64_t col_offset, int64_t num_cols);
     void one();
     void sub_scalar(T t);
     void mul_scalar(T t);
@@ -211,6 +226,7 @@ public:
     void add_at_offset(BaseMatrixT& b, int64_t col_offset);
     void clip(T t1, T t2);
     void down_clip(T t);
+    void bigger_than_scalar(T t);
     void assign(BaseMatrixT& b);
     void assign_at_offset(BaseMatrixT& b, int64_t col_offset);
     void add_col_vector(BaseMatrixT& b);
@@ -295,51 +311,51 @@ public:
      */
     void is_equal_to(BaseMatrixT & b, T t);
 
-    void soft_cross_entropy(BaseMatrixT& b1, BaseMatrixT& b2);
-    void soft_cross_entropy_bp(BaseMatrixT& b1, BaseMatrixT& b2);
-    void binary_label_cross_entropy(BaseMatrixT& b1, BaseMatrixT& b2);
-    void binary_label_cross_entropy_bp(BaseMatrixT& b1, BaseMatrixT& b2);
+    void soft_cross_entropy(BaseMatrixT& b, BaseMatrixT& c);
+    void soft_cross_entropy_bp(BaseMatrixT& b, BaseMatrixT& c);
+    void binary_label_cross_entropy(BaseMatrixT& b, BaseMatrixT& c);
+    void binary_label_cross_entropy_bp(BaseMatrixT& b, BaseMatrixT& c);
 
     /*
-     * this = b1 + b2
+     * this = b + c
      */
-    void add(BaseMatrixT& b1, BaseMatrixT& b2);
+    void add(BaseMatrixT& b, BaseMatrixT& c);
     /*
-     * this = b1 * t1 + b2 * t2
+     * this = b * t1 + c * t2
      */
-    void add(BaseMatrixT& b1,
+    void add(BaseMatrixT& b,
              T t1,
-             BaseMatrixT& b2,
+             BaseMatrixT& c,
              T t2);
     /*
-     * this = b1 - b2
+     * this = b - c
      */
-    void sub(BaseMatrixT& b1, BaseMatrixT& b2);
+    void sub(BaseMatrixT& b, BaseMatrixT& c);
     /*
-     * this = b1 * t1 - b2 * t2
+     * this = b * t1 - c * t2
      */
-    void sub(BaseMatrixT& b1,
+    void sub(BaseMatrixT& b,
              T t1,
-             BaseMatrixT& b2,
+             BaseMatrixT& c,
              T t2);
     /*
-     * this = this + b1 + b2
+     * this = this + b + c
      */
-    void add2(BaseMatrixT& b1, BaseMatrixT& b2);
+    void add2(BaseMatrixT& b, BaseMatrixT& c);
     /*
-     * this = this * t1 + b1 * t2 + b2 * t3
+     * this = this * t1 + b * t2 + c * t3
      */
-    void add2(BaseMatrixT& b1,
-              BaseMatrixT& b2,
+    void add2(BaseMatrixT& b,
+              BaseMatrixT& c,
               T t1,
               T t2,
               T t3);
     /*
-     * this = b1 * t1 + b2 * t2 + b3 * t3
+     * this = b * t1 + c * t2 + d * t3
      */
-    void add3(BaseMatrixT& b1,
-              BaseMatrixT& b2,
-              BaseMatrixT& b3,
+    void add3(BaseMatrixT& b,
+              BaseMatrixT& c,
+              BaseMatrixT& d,
               T t1,
               T t2,
               T t3);
@@ -354,8 +370,8 @@ public:
                     T momentum,// momentum
                     T decay_rate); // decay rate
     /*
-     * b2 = t2 * b2 - t1 * b3 * (b1 + t3 * this)
-     * this += b2
+     * c = t2 * c - t1 * d * (b + t3 * this)
+     * this += c
      */
     void sgd_update(BaseMatrixT& grad,//grad
                     BaseMatrixT& mom,//mom
@@ -377,110 +393,110 @@ public:
      */
     void dot_mul(BaseMatrixT& b);
     /*
-     * this = b1 * b2
+     * this = b * c
      */
-    void dot_mul(BaseMatrixT& b1, BaseMatrixT& b2);
+    void dot_mul(BaseMatrixT& b, BaseMatrixT& c);
 
     /*
      * this = b / c
      */
-    void dot_div(BaseMatrixT& b1, BaseMatrixT& b2);
+    void dot_div(BaseMatrixT& b, BaseMatrixT& c);
     /*
-     * this = (b1 + t1) / (b2 + t2)
+     * this = (b + t1) / (c + t2)
      */
-    void dot_div(BaseMatrixT& b1,
-                 BaseMatrixT& b2,
+    void dot_div(BaseMatrixT& b,
+                 BaseMatrixT& c,
                  T t1,
                  T t2);
 
     /*
-     * this = log(1 + exp(b1 - b2)) - b3 * (b1 - b2)
+     * this = log(1 + exp(b - c)) - d * (b - c)
      */
-    void rank_loss(BaseMatrixT& b1,
-                   BaseMatrixT& b2,
-                   BaseMatrixT& b3);
+    void rank_loss(BaseMatrixT& b,
+                   BaseMatrixT& c,
+                   BaseMatrixT& d);
 
-    void rank_loss_bp(BaseMatrixT& b1,
-                   BaseMatrixT& b2,
-                   BaseMatrixT& b3);
-
-    /*
-     * this = log(1 + exp(b1)) - b2 * b1
-     */
-    void logistic_regression_loss(BaseMatrixT& b1, BaseMatrixT& b2);
-    /*
-     * this += exp(b1)/(1+exp(b1)) - b2
-     */
-    void logistic_regression_loss_bp(BaseMatrixT& b1, BaseMatrixT& b2);
+    void rank_loss_bp(BaseMatrixT& b,
+                   BaseMatrixT& c,
+                   BaseMatrixT& d);
 
     /*
-     * this = b1 > b2 ? 1.0 : 0.0
+     * this = log(1 + exp(b)) - c * b
      */
-    void bigger_than(BaseMatrixT& b1, BaseMatrixT& b2);
+    void logistic_regression_loss(BaseMatrixT& b, BaseMatrixT& c);
     /*
-     * this = ((b1 > b2 && b3 > 0.5) || (b1 < b2 && b2 < 0.5)) ? 1 : 0
+     * this += exp(b)/(1+exp(b)) - c
      */
-    void bigger_than(BaseMatrixT& b1,
-                     BaseMatrixT& b2,
-                     BaseMatrixT& b3);
+    void logistic_regression_loss_bp(BaseMatrixT& b, BaseMatrixT& c);
 
-    void max(BaseMatrixT& b1, BaseMatrixT& b2);
+    /*
+     * this = b > c ? 1.0 : 0.0
+     */
+    void bigger_than(BaseMatrixT& b, BaseMatrixT& c);
+    /*
+     * this = ((b > c && d > 0.5) || (b < c && c < 0.5)) ? 1 : 0
+     */
+    void bigger_than(BaseMatrixT& b,
+                     BaseMatrixT& c,
+                     BaseMatrixT& d);
+
+    void max(BaseMatrixT& b, BaseMatrixT& c);
 
     void binary_classification_error(size_t dest_col,
-                                     BaseMatrixT& b1,
-                                     BaseMatrixT& b2,
-                                     BaseMatrixT& b3,
+                                     BaseMatrixT& b,
+                                     BaseMatrixT& c,
+                                     BaseMatrixT& d,
                                      T t);
     void binary_classification_error2(size_t dest_col,
-                                      BaseMatrixT& b1,
-                                      BaseMatrixT& b2,
-                                      BaseMatrixT& b3,
+                                      BaseMatrixT& b,
+                                      BaseMatrixT& c,
+                                      BaseMatrixT& d,
                                       T t);
     /*
      * this = this * b * b
      */
     void dot_mul_square(BaseMatrixT& b);
     /*
-     * this = b1 * b2 * b2
+     * this = b * c * c
      */
-    void dot_mul_square(BaseMatrixT& b1, BaseMatrixT& b2);
+    void dot_mul_square(BaseMatrixT& b, BaseMatrixT& c);
     /*
      * this = this * this * b
      */
     void dot_square_mul(BaseMatrixT& b);
 
     /*
-     * this = b1 * b1 * b2 * b2
+     * this = b * b * c * c
      */
-    void dot_square_square(BaseMatrixT& b1, BaseMatrixT& b2);
+    void dot_square_square(BaseMatrixT& b, BaseMatrixT& c);
 
     /*
-     * this = this * (t1 * b1 + t2 * b2)^2
+     * this = this * (t1 * b + t2 * c)^2
      */
-    void dot_mul_square_sum(BaseMatrixT& b1,
-                            BaseMatrixT& b2,
+    void dot_mul_square_sum(BaseMatrixT& b,
+                            BaseMatrixT& c,
                             T t1,
                             T t2);
     /*
-     * this = (t1 * b1 + t2 * b2)^2
+     * this = (t1 * b + t2 * c)^2
      */
-    void dot_square_sum(BaseMatrixT& b1,
-                        BaseMatrixT& b2,
+    void dot_square_sum(BaseMatrixT& b,
+                        BaseMatrixT& c,
                         T t1,
                         T t2);
     /*
-     * this = this * (t1 * b1 + t2 * b2)
+     * this = this * (t1 * b + t2 * c)
      */
-    void dot_mul_sum(BaseMatrixT& b1,
-                     BaseMatrixT& b2,
+    void dot_mul_sum(BaseMatrixT& b,
+                     BaseMatrixT& c,
                      T t1,
                      T t2);
     /*
-     * this += sqr(t1 * b1 + t2 * b2 + t3 * b3)
+     * this += sqr(t1 * b + t2 * c + t3 * d)
      */
-    void add_square_sum(BaseMatrixT& b1,
-                        BaseMatrixT& b2,
-                        BaseMatrixT& b3,
+    void add_square_sum(BaseMatrixT& b,
+                        BaseMatrixT& c,
+                        BaseMatrixT& d,
                         T t1,
                         T t2,
                         T t3);
@@ -495,10 +511,10 @@ public:
                           T t1,
                           T t2);
     /*
-     * this = t1 * this + t2 * sqr(b1 * b2)
+     * this = t1 * this + t2 * sqr(b * c)
      */
-    void decay_add_square_mul(BaseMatrixT& b1,
-                              BaseMatrixT& b2,
+    void decay_add_square_mul(BaseMatrixT& b,
+                              BaseMatrixT& c,
                               T t1,
                               T t2);
     /*
@@ -508,10 +524,10 @@ public:
                     T t1,
                     T t2);
     /*
-     * this = 1 / (t1 * b1 + t2 * b2 + t3)
+     * this = 1 / (t1 * b + t2 * c + t3)
      */
-    void reciprocal_sum(BaseMatrixT& b1,
-                        BaseMatrixT& b2,
+    void reciprocal_sum(BaseMatrixT& b,
+                        BaseMatrixT& c,
                         T t1,
                         T t2,
                         T t3);
@@ -522,67 +538,67 @@ public:
     void copy_and_clear(BaseMatrixT& b);
 
     /*
-     * this_row[dest_col] += dotprod(b1_row, b2_row)
+     * this_row[dest_col] += dotprod(b_row, c_row)
      */
     void row_dot_mul(size_t dest_col,
-                     BaseMatrixT& b1,
-                     BaseMatrixT& b2);
+                     BaseMatrixT& b,
+                     BaseMatrixT& c);
     void row_dot_mul2(size_t dest_col,
-                     BaseMatrixT& b1,
-                     BaseMatrixT& b2);
+                     BaseMatrixT& b,
+                     BaseMatrixT& c);
 
     /*
-     * this = t1 * this + t2 *  b1 * b2
+     * this = t1 * this + t2 *  b * c
      */
-    void add_dot_mul(BaseMatrixT& b1,
-                     BaseMatrixT& b2,
+    void add_dot_mul(BaseMatrixT& b,
+                     BaseMatrixT& c,
                      T t1,
                      T t2);
     /*
      *  vector (one row matrix)
      *   for each row i, do:
-     *      this_row += dot_mul(b1_row_i, b2_row_i)
+     *      this_row += dot_mul(b_row_i, c_row_i)
      */
-    void add_dot_mul_vmm(BaseMatrixT& b1, BaseMatrixT& b2);
-    void add_dot_mul_vmm2(BaseMatrixT& b1, BaseMatrixT& b2);
+    void add_dot_mul_vmm(BaseMatrixT& b, BaseMatrixT& c);
+    void add_dot_mul_vmm2(BaseMatrixT& b, BaseMatrixT& c);
 
     /*
-     * b2 is vector (one row matrix)
+     * c is vector (one row matrix)
      * for each row i, do:
-     *  this_row_i += dot_mul(b1_row_i, b2_row)
+     *  this_row_i += dot_mul(b_row_i, c_row)
      */
-    void add_dot_mul_mmv(BaseMatrixT& b1, BaseMatrixT& b2);
-    void add_dot_mul_mmv2(BaseMatrixT& b1, BaseMatrixT& b2);
+    void add_dot_mul_mmv(BaseMatrixT& b, BaseMatrixT& c);
+    void add_dot_mul_mmv2(BaseMatrixT& b, BaseMatrixT& c);
 
     /*
-     * this_row = b1_row * b2_row[col]
+     * this_row = b_row * c_row[col]
      */
     void row_scale(size_t col,
-                   BaseMatrixT& b1,
-                   BaseMatrixT& b2);
+                   BaseMatrixT& b,
+                   BaseMatrixT& c);
     void row_scale2(size_t col,
-                   BaseMatrixT& b1,
-                   BaseMatrixT& b2);
+                   BaseMatrixT& b,
+                   BaseMatrixT& c);
 
     /*
-     * this_col = b1_col * b2_col[row]
+     * this_col = b_col * c_col[row]
      */
     void col_scale(size_t row,
-                   BaseMatrixT& b1,
-                   BaseMatrixT& b2);
+                   BaseMatrixT& b,
+                   BaseMatrixT& c);
 
     /*
-     * this_col += b1_col * b2_col[row]
+     * this_col += b_col * c_col[row]
      */
     void add_col_scale(size_t row,
-                       BaseMatrixT& b1,
-                       BaseMatrixT& b2);
+                       BaseMatrixT& b,
+                       BaseMatrixT& c);
     /*
-     * this_row += b1_row * b2_row[col]
+     * this_row += b_row * c_row[col]
      */
     void add_row_scale(size_t col,
-                       BaseMatrixT& b1,
-                       BaseMatrixT& b2);
+                       BaseMatrixT& b,
+                       BaseMatrixT& c);
     /*
      * calculate the sum of each row of the matrix b.
      */
@@ -610,23 +626,23 @@ public:
     void min_cols(BaseMatrixT& b);
 
     /*
-     * calculate the sum of each row of(b1 - b2)^2.
+     * calculate the sum of each row of(b - c)^2.
      */
-    void sum_of_squares(BaseMatrixT& b1, BaseMatrixT& b2);
+    void sum_of_squares(BaseMatrixT& b, BaseMatrixT& c);
     /*
-     *  this_row = b1_row + t * ones * b2_row[col]
+     *  this_row = b_row + t * ones * c_row[col]
      */
     void row_add(size_t col,
-                 BaseMatrixT& b1,
-                 BaseMatrixT& b2,
+                 BaseMatrixT& b,
+                 BaseMatrixT& c,
                  T t);
 
     /*
-     * this_row = pow(b1_row, b2_row[col])
+     * this_row = pow(b_row, c_row[col])
      */
     void row_pow(size_t col,
-                 BaseMatrixT& b1,
-                 BaseMatrixt& b2);
+                 BaseMatrixT& b,
+                 BaseMatrixT& c);
 
     virtual bool is_sparse() const{
         return false;

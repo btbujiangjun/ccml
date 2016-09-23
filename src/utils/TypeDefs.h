@@ -18,3 +18,4 @@ namespace utils{
 }//namespace utils
 }//namespace ccml
 #endif
+using ccml::utils::real;
