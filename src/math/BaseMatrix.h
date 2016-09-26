@@ -13,10 +13,16 @@
 namespace ccml{
 namespace math{
 
+template<class T, T v>
+struct bool_constant{
+    static const T value = v;
+};
+typedef bool_constant<bool, false> false_type;
+typedef bool_constant<bool, true> true_type;
 
 #define CAL_MATRIX_START_ADDRESS(address, height, width, ld, col, row) \
     CC_CHECK_LE(col, width); \
-    CC_CHECK_LE(row, heigth); \
+    CC_CHECK_LE(row, height); \
     address += row * ld + col;
 
 class MatrixOffset{
@@ -57,7 +63,7 @@ public:
     size_t _height;
     size_t _width;
     size_t _stride;
-    T _data;
+    T* _data;
     bool _trans;
 
 public:
@@ -95,15 +101,16 @@ public:
         _data = data;
     }
 
-    template <class Op>
+    template<class Op>
     int apply_unary(Op op);
-    template <class Op>
-    int apply_unary(Op op, 
+
+    template<class Op>
+    int apply_unary(Op op,
                     int num_rows,
                     int num_cols,
                     MatrixOffset& offset);
     
-    template <class Op>
+    template<class Op>
     int apply_binary(Op op, BaseMatrixT& b);
 
     template <class Op, class RowVector, class ColVector>
@@ -114,6 +121,7 @@ public:
                      MatrixOffset& offset,
                      RowVector,
                      ColVector);
+
     template<class Op>
     int apply_binary(Op op,
                      BaseMatrixT& b,
@@ -125,6 +133,7 @@ public:
     int apply_ternary(Op op,
                       BaseMatrixT& b,
                       BaseMatrixT& c);
+
     template<class Op, class RowVector, class ColVector>
     int apply_ternary(Op op,
                       BaseMatrixT& b,
@@ -134,6 +143,7 @@ public:
                       MatrixOffset& offset,
                       RowVector,
                       ColVector);
+    
     template<class Op>
     int apply_ternary(Op op,
                       BaseMatrixT& b,
@@ -147,6 +157,7 @@ public:
                          BaseMatrixT& b,
                          BaseMatrixT& c,
                          BaseMatrixT& d);
+    
     template<class Op>
     int apply_quaternary(Op op,
                          BaseMatrixT& b,
