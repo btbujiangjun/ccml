@@ -457,5 +457,37 @@ void BaseMatrixT<T>::add_p2p(BaseMatrixT& b){
     ///todo
     hl_gpu_apply_binary_op<T, binary::Add<T>, 0, 0>(binary::Add<T>(), t1, t2, dim_m, dim_n, dim_n);
 }
+
+template<class T>
+void BaseMatrixT<T>::add_col_vector(BaseMatrixT& b){
+    MatrixOffset offset(0, 0, 0, 0);
+    int num_rows = _height;
+    int num_cols = _width;
+
+    apply_binary(binary::Add<T>(), b, num_rows, num_cols, offset, false_type(), true_type());
+}
+
+template<class T>
+void BaseMatrixT<T>::add_col_vector(BaseMatrixT& b){
+    MatrixOffset offset(0, 0, 0, 0);
+    int num_rows = _height;
+    int num_cols = _weight;
+
+    apply_binary(binary::Add<T>(), b, num_rows, num_cols, offset, true_type(), false_type());
+}
+
+DEFINE_MATRIX_BINARY_PARAMETER_OP(ADD1, ONE_PARAMETER, a += b * t);
+template<class T>
+void BaseMatrixT<T>::add(BaseMatrixT& b, T t){
+    apply_binary(binary::Add1<T>(t), b);
+}
+
+
+
+
+
+
+
+
 }//namespace math
 }//namespace ccml
