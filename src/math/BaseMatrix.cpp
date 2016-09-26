@@ -7,6 +7,7 @@
 **********************************************/
 
 #include "BaseMatrix.h"
+#include "MatrixOps.h"
 #include "utils/Logging.h"
 
 namespace ccml{
@@ -25,8 +26,8 @@ template<class T>
 template<class Op>
 int BaseMatrixT<T>::apply_unary(Op op,
                                 int num_rows,
-                                int num_rows,
-                                MatrixOffset offset){
+                                int num_cols,
+                                MatrixOffset& offset){
     CC_CHECK(!this->is_sparse()) << SPARSE_SUPPORT_ERROR;
     int dim_m = num_rows;
     int dim_n = num_cols;
@@ -35,19 +36,19 @@ int BaseMatrixT<T>::apply_unary(Op op,
     T* t = _data;
     CAL_MATRIX_START_ADDRESS(t, _height, _width, lda, offset._aCol, offset._bRow);
 
-    CC_CHECK_LE(dim_m + offset._aRow, this->_heigth);
+    CC_CHECK_LE(dim_m + offset._aRow, this->_height);
     CC_CHECK_LE(dim_n + offset._aCol, this->_width);
 
     ///todo:
-    hl_cpu_apply_unary_op(op, t, dim_m, dim_n, lda);
+    //hl_cpu_apply_unary_op(op, t, dim_m, dim_n, lda);
 
     return 0;
 }
 
 template<class T>
 template<class Op>
-int BaseMatrixT<T>::apply_binary(Op op BaseMatrixT& b){
-    CC_CHECK(_height == b._height && _width == b._weidth) << "Matrix dimensions are not equal.";
+int BaseMatrixT<T>::apply_binary(Op op, BaseMatrixT& b){
+    CC_CHECK(_height == b._height && _width == b._width) << "Matrix dimensions are not equal.";
 
     MatrixOffset offset(0, 0, 0, 0);
     return apply_binary(op, b, _height, _width, offset);
@@ -59,7 +60,7 @@ int BaseMatrixT<T>::apply_binary(Op op,
                                  BaseMatrixT& b,
                                  int num_rows,
                                  int num_cols,
-                                 MatrixOffset offset,
+                                 MatrixOffset& offset,
                                  RowVector,
                                  ColVector){
     CC_CHECK(!this->is_sparse()) << SPARSE_SUPPORT_ERROR;
@@ -74,7 +75,7 @@ int BaseMatrixT<T>::apply_binary(Op op,
     T* t2 = b._data;
     CAL_MATRIX_START_ADDRESS(t1, _height, _width, lda, offset._aCol, offset._bRow);
     CAL_MATRIX_START_ADDRESS(t2, b._weight, b._width, ldb, offset._bCol, offset._bRow);
-    CC_CHECK_LE(dim_m + offset._aRow, this->_heigth);
+    CC_CHECK_LE(dim_m + offset._aRow, this->_height);
     CC_CHECK_LE(dim_n + offset._bCol, this->_width);
 
     if(!RowVector::value){
@@ -85,7 +86,7 @@ int BaseMatrixT<T>::apply_binary(Op op,
     }
 
     ///todo
-    hl_cpu_apply_binary_op<T, Op, RowVector::value, ColVector::value>(op, t1, t2, dim_m, dim_n, lda, ldb);
+    //hl_cpu_apply_binary_op<T, Op, RowVector::value, ColVector::value>(op, t1, t2, dim_m, dim_n, lda, ldb);
 
     return 0;
 }
@@ -111,7 +112,7 @@ int BaseMatrixT<T>::apply_ternary(Op op,
                                   BaseMatrixT& c,
                                   int num_rows,
                                   int num_cols,
-                                  MatrixOffset offset){
+                                  MatrixOffset& offset){
     return apply_ternary(op, b, c, num_rows, num_cols, offset, false_type(), false_type());
 }
 
@@ -122,7 +123,7 @@ int BaseMatrixT<T>::apply_ternary(Op op,
                                   BaseMatrixT& c,
                                   int num_rows,
                                   int num_cols,
-                                  MatrixOffset offset,
+                                  MatrixOffset& offset,
                                   RowVector,
                                   ColVector){
     CC_CHECK(!this->is_sparse()) << SPARSE_SUPPORT_ERROR;
@@ -142,7 +143,7 @@ int BaseMatrixT<T>::apply_ternary(Op op,
     CAL_MATRIX_START_ADDRESS(t2, b._height, b._width, ldb, offset._bCol, offset._bRow);
     CAL_MATRIX_START_ADDRESS(t3, c._height, c._width, ldc, offset._cCol, offset._cRow);
 
-    CC_CHECK_LE(dim_m + offset._aRow, this->_heigth);
+    CC_CHECK_LE(dim_m + offset._aRow, this->_height);
     CC_CHECK_LE(dim_n + offset._aCol, this->_width);
     CC_CHECK_LE(dim_m + offset._bRow, b._height);
     CC_CHECK_LE(dim_n + offset._bCol, b._width);
@@ -154,7 +155,7 @@ int BaseMatrixT<T>::apply_ternary(Op op,
         CC_CEHCK_LE(dim_n + offset._cCol, c._width);
     }
     ///todo
-    hl_cpu_apply_ternary_op<T, Op, RowVector::value, ColVector::value>(op, t1, t2, t3, dim_m, dim_n, lda,ldb,ldc);
+    //hl_cpu_apply_ternary_op<T, Op, RowVector::value, ColVector::value>(op, t1, t2, t3, dim_m, dim_n, lda,ldb,ldc);
     return 0;
 }
 
@@ -182,7 +183,7 @@ int BaseMatrixT<T>::apply_quaternary(Op op,
                                      BaseMatrixT& d,
                                      int num_rows,
                                      int num_cols,
-                                     MatrixOfset offset){
+                                     MatrixOffset& offset){
     CC_CHECK(!this->is_sparse()) << SPARSE_SUPPORT_ERROR;
     CC_CHECK(!b.is_sparse()) << SPARSE_SUPPORT_ERROR;
     CC_CHECK(!c.is_sparse()) << SPARSE_SUPPORT_ERROR;
@@ -215,19 +216,19 @@ int BaseMatrixT<T>::apply_quaternary(Op op,
     CC_CHECK_LE(dim_n + offset._dCol, d._width);
 
     ///todo
-    hl_cpu_apply_quaternary_op(op, t1, t2, t3, t4, dim_m, dim_n, lda, ldb, ldc, ldd);
+    //hl_cpu_apply_quaternary_op(op, t1, t2, t3, t4, dim_m, dim_n, lda, ldb, ldc, ldd);
     return 0;
 }
 
 template<class T>
-tempalte<class Agg, class Op, class Saver, class RowVector, class ColVector>
+template<class Agg, class Op, class Saver, class RowVector, class ColVector>
 int BaseMatrixT<T>::aggregate(Agg agg,
                               Op op,
                               Saver sv,
                               BaseMatrixT& b,
                               int num_rows,
                               int num_cols,
-                              MatrixOffset ofset,
+                              MatrixOffset& ofset,
                               RowVector,
                               ColVector){
     int lda = _stride;
@@ -241,10 +242,10 @@ int BaseMatrixT<T>::aggregate(Agg agg,
 
     if(RowVector::value && !ColVector::value){
         ///todo
-        hl_cpu_matrix_column_op(agg, op, sv, num_rows, num_cols, t1, t2, ldb);
+        //hl_cpu_matrix_column_op(agg, op, sv, num_rows, num_cols, t1, t2, ldb);
     }else if(!RowVector::value && ColVector::value){
         ///todo
-        hl_cpu_matrix_row_op(agg, op, sv, num_rows, num_cols, t1, t2, ldb);
+        //hl_cpu_matrix_row_op(agg, op, sv, num_rows, num_cols, t1, t2, ldb);
     }else{
         LOG(FATAL) << "Not supported.";
     }
@@ -258,10 +259,10 @@ int BaseMatrixT<T>::aggregate(Agg agg,
                               Op op,
                               Saver sv,
                               BaseMatrixT& b,
-                              BaseMatrixt& c,
+                              BaseMatrixT& c,
                               int num_rows,
                               int num_cols,
-                              MatrixOffset offset,
+                              MatrixOffset& offset,
                               RowVector,
                               ColVector){
     int lda = _stride;
@@ -278,10 +279,10 @@ int BaseMatrixT<T>::aggregate(Agg agg,
 
     if(RowVector::value && !ColVector::value){
         ///todo
-        hl_cpu_matrix_column_op(agg, op, sv, num_rows, num_cols, t1, t2, ldb, t3, ldc);
+        //hl_cpu_matrix_column_op(agg, op, sv, num_rows, num_cols, t1, t2, ldb, t3, ldc);
     }else if(!RowVector::value && ColVector::value){
         ///todo
-        hl_cpu_matrix_row_op(agg, op, sv, num_rows, num_cols, t1, t2, ldb, t3, ldc);
+        //hl_cpu_matrix_row_op(agg, op, sv, num_rows, num_cols, t1, t2, ldb, t3, ldc);
     }else{
         LOG(FATAL) << "Not supported.";
     }
@@ -350,10 +351,10 @@ void BaseMatrixT<T>::zero_at_offset(int64_t col_offset, int64_t num_columns){
     apply_unary(unary::Zero<T>(), num_rows, num_cols, offset);
 }
 
-DEFINE_MATRIX_UNARY_PARAMETER_OP(Pow, ONE_PARAMETER, a = pow(a, p));
+DEFINE_MATRIX_UNARY_PARAMETER_OP(Pow, ONE_PARAMETER, a = pow(a, t));
 template<>
-void BaseMatrixT<real>::pow(real p){
-    vPow(_height * _width, _data, p, _data);
+void BaseMatrixT<real>::pow(real t){
+    vPow(_height * _width, _data, t, _data);
 }
 
 DEFINE_MATRIX_UNARY_PARAMETER_OP(SubScalar, ONE_PARAMETER, a -= t);
@@ -424,10 +425,10 @@ template<>
 void BaseMatrixT<real>::add(BaseMatrixT& b){
     CC_CHECK_EQ(_height, b._height);
     CC_CHECK_EQ(_width, b._width);
-    vAdd(_height * _width, _data, b,_data, _data);
+    vAdd(_height * _width, _data, b, _data, _data);
 }
 
-template<T>
+template<class T>
 void BaseMatrixT<T>::add_at_offset(BaseMatrixT& b, int64_t col_offset){
     if(col_offset + b._width <= _width){
         int num_rows = _height;
@@ -455,7 +456,7 @@ void BaseMatrixT<T>::add_p2p(BaseMatrixT& b){
     int dim_n = _width;
     
     ///todo
-    hl_gpu_apply_binary_op<T, binary::Add<T>, 0, 0>(binary::Add<T>(), t1, t2, dim_m, dim_n, dim_n);
+    //hl_gpu_apply_binary_op<T, binary::Add<T>, 0, 0>(binary::Add<T>(), t1, t2, dim_m, dim_n, dim_n);
 }
 
 template<class T>
@@ -481,6 +482,181 @@ template<class T>
 void BaseMatrixT<T>::add(BaseMatrixT& b, T t){
     apply_binary(binary::Add1<T>(t), b);
 }
+
+DEFINE_MATRIX_BINARY_PARAMETER_OP(Pow, ONE_PARAMETER, a = pow(b, t));
+template<>
+void BaseMatrix<real>::pow(BaseMatrixT& b, real t){
+    vPow(_height * _width, b._data, t, _data);
+}
+
+DEFINE_MATRIX_BINARY_PARAMETER_OP(Add2, TWO_PARAMETER, a = t1 * a + t2 * b);
+template<class T>
+void BaseMatrixT<T>::add_(BaseMatrixT& b, T t1, T t2){
+    apply_binary(binary::Add2<T>(t1, t2), b);
+}
+
+template<class T>
+void BaseMatrixT<T>::add_bias(BaseMatrixT& b, T scale){
+    MatrixOffset offset(0, 0, 0, 0);
+    int num_rows = _height;
+    int num_cols = _width;
+
+    apply_binary(binary::Add1<T>(scale), b, num_rows, num_cols, offset, true_type, false_type());
+}
+
+DEFINE_MATRIX_BINARY_OP(Sub , a -= b);
+template<class T>
+void BaseMatrixT<T>::sub(BaseMatrixT& b){
+    apply_binary(binary::Sub<T>(), b);
+}
+
+DEFINE_MATRIX_BINARY_PARAMETER_OP(Sub1, ONE_PARAMETER, a -= b * t);
+template<class T>
+void BaseMatrixT<T>::sub(BaseMatrixT& b, T t){
+    apply_binary(binary::Sub1<T>(t), b);
+}
+
+DEFINE_MATRIX_BINARY_OP(Relu, b = a > 0.0f ? a : 0.0f);
+template<class T>
+void BaseMatrixT<T>::relu(BaseMatrixT& b){
+    apply_binary(binary::Relu<T>(), b);
+}
+
+DEFINE_MATRIX_BINARY_OP(ReluDerivative, a *= (b > 0.0f ? 1.0f : 0.0f));
+template<class T>
+void BaseMatrixT<T>::relu_derivative(BaseMatrixT& b){
+    apply_binary(binary::ReluDerivative<T>(), b);
+}
+
+DEFINE_MATRIX_BINARY_OP(SoftRelu, const T THRESHOLD = 40.0;\
+    b = log(1.0 + exp(( a > THRESHOLD) ? THRESHOLD : ( (a < -THRESHOLD) ? -THRESHOLD : a))));
+template<>
+void BaseMatrixT<real>::softrelu(BaseMatrixT& b){
+    apply_binary(binary::SoftRelu<real>(), b);
+}
+
+DEFINE_MATRIX_BINARY_OP(SoftReluDerivative, const T THRESHOLD = 40.0;\
+    a *= (1.0 - exp(-1.0 * ((b > THRESHOLD) ? THRESHOLD: ((b < -THRESHOLD) ? -THRESHOLD : b)))));
+template<>
+void BaseMatrixT<real>::soft_relu_derivative(BaseMatrixT& b){
+    apply_binary(binary::SoftReluDerivative<real>(), b);
+}
+
+DEFINE_MATRIX_BINARY_PARAMETER_OP(Brelu, TWO_PARAMETER, b = a > t1 ? a : t1;\
+        b = b < t2 ? b : t2);
+template<class T>
+void BaseMatrixT<T>:brelu(BaseMatrixT& b){
+    int t1 = 0;
+    int t2 = 24;
+
+    apply_binary(binary::Brelu<T>(t1, t2), b);
+}
+
+DEFINE_MATRIX_BINARY_PAREMATER_OP(BreluDerivative, TWO_PARAMETER, a *= (b > t1 && b < t2>) ? 1.0 : 0.0);
+template<class T>
+void BaseMatrixT<T>::brelu_derivative(BaseMatrixT& b){
+    int p1 = 0;
+    int p2 = 24;
+    
+    apply_binary(binary::BreluDerivative<T>(t1, t2), b);
+}
+
+DEFINE_MATRIX_BINARY_OP(Square, b = a * a);
+template<class T>
+void BaseMatrixT<T>::square(BaseMatrixT& b){
+    apply_binary(binary::Square<T>(), b);
+}
+
+DEFINE_MATRIX_BINARY_OP(SquareDerivative, a *= 2.0 * b);
+template<class T>
+void BaseMatrixT<T>::square_derivative(BaseMatrixT& b){
+    apply_binary(binary::SquareDerivative<T>(), b);
+}
+
+DEFINE_MATRIX_BINARY_OP(Tanh, b = 2.0 / (1.0 + exp(-2 * b)) - 1.0);
+template<>
+void BaseMatrixT<real>::tanh(BaseMatrixT& b){
+    apply_bianry(binary::Tanh<T>(), b);
+}
+
+DEFINE_MATRIX_BINARY_OP(TanhDerivative, a *= 1- b * b);
+template<class t>
+void BaseMatrixT<T>::tanh_derivative(BaseMatrixT& b){
+    apply_binary(binary::TanhDerivative<T>(), b);
+}
+
+DEFINE_MATRIX_BINARY_PARAMATER_OP(ScaledTanh, TWO_PARAMETER, b = t1 * (2.0 / (1.0 + exp(-2 * t2 * a)) - 1.0));
+template<>
+void BaseMatrixT<real>::scaled_tanh(BaseMatrixT& b, real t1, real t2){
+    apply_binary(binary::ScaledTanh<real>(t1, t2), b);
+}
+
+DEFINE_MATRIX_BINARY_PARAMETER_OP(ScaledTanhDerivative, TWO_PARAMETER, a *= t2 * (t1 - b * b));
+template<class T>
+void BaseMatrixT<T>::scaled_tanh_derivative(BaseMatrixT& b, T t1, T t2){
+    apply_binary(binary::ScaledTanhDerivative<T>(t1 * t1, t2 / t1), b);
+}
+
+DEFINE_MATRIX_BINARY_OP(ReciprocalDerivative, a *= -b * b);
+template<class T>
+void BaseMatrixT<T>::reciprocal_derivative(BaseMatrixT& b){
+    apply_binary(binary::ReciprocalDerivative<T>(), b);
+}
+
+DEFINE_MATRIX_BINARY_OP(Abs, b = a > 0.0f ? a : -a);
+template<class T>
+void BaseMatrixT<T>::abs(BaseMatrixT& b){
+    apply_binary(binary::Abs<T>(), b);
+}
+
+DEFINE_MATRIX_BINARY_OP(AbsDerivative, a = (b>0) ? a : (b<0)? -a : 0);
+template<class T>
+void BaseMatrixT<T>::abs_derivative(BaseMatrixT& b){
+    apply_binary(binary::AbsDerivative<T>(), b);
+}
+
+DEFINE_MATRIX_BINARY_OP(Sigmoid, const T THRESHOLD_MIN = -40.0; const T THRESHOLD_MAX = 13.0; T tmp = (a<THRESHOLD_MIN) ? THRESHOLD_MIN :((a>THRESHOLD_MAX) ? THRESHOLD_MAX : a); b = 1.0f /(1.0f + exp(-tmp)));
+template<>
+void BaseMatrixT<real>::sigmoid(BaseMatrixT& b){
+    size_t num_samples = this->_height;
+    size_t dim = this->_width;
+    CC_CHECK_EQ(b._weigth, num_samples);
+    CC_CHECK_EQ(b._width, dim);
+    const real* in = this->_data;
+    real* out = b._data;
+
+    const float THRESHOLD_MIN = -40.0;
+    const float THRESHOLD_MAX = 13.0;
+    for(size_t i = 0; i < num_samples * dim; i++){
+        real temp = in[i];
+        temp = (temp < THRESHOLD_MIN) ? THRESHOLD : ((temp > THRESHOLD_MAX) ? THRESHOLD_MAX : THRESHOLD_MAX : temp);
+        out[i] = -temp;
+    }
+
+    vExp(num_samples * dim, out, out);//out = exp(out)
+
+    for(size_t i = 0; i < num_samples * dim; i++){
+        out[i] = 1 / (1 + out[1]);
+    }
+}
+
+DEFINE_MATRIX_BINARY_OP(SigmoidDerivative, a *= b * (1 - b));
+template<class T>
+void BaseMatrixT<T>::sigmoid_derivative(BaseMatrixT& b){
+    apply_binary(binary::SigmoidDerivative<T>(), b);
+}
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
