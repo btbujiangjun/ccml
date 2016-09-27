@@ -152,7 +152,7 @@ int BaseMatrixT<T>::apply_ternary(Op op,
         CC_CHECK_LE(dim_m + offset._cRow, c._height);
     }
     if(!ColVector::value){
-        CC_CEHCK_LE(dim_n + offset._cCol, c._width);
+        CC_CHECK_LE(dim_n + offset._cCol, c._width);
     }
     ///todo
     //hl_cpu_apply_ternary_op<T, Op, RowVector::value, ColVector::value>(op, t1, t2, t3, dim_m, dim_n, lda,ldb,ldc);
@@ -646,7 +646,7 @@ void BaseMatrixT<T>::sigmoid_derivative(BaseMatrixT& b){
 DEFINE_MATRIX_BINARY_OP(ExpDerivative, a *= b);
 template<class T>
 void BaseMatrixT<T>::exp_derivative(BaseMatrixT& b){
-    apply_binary(binary::exp_derivate<T>(), b);
+    apply_binary(binary::ExpDerivative<T>(), b);
 }
 
 DEFINE_MATRIX_BINARY_OP(Sign, b = a > 0.0f ? 1.0f : -1.0f);
@@ -684,20 +684,90 @@ void BaseMatrixT<real>::inv_sqrt(BaseMatrixT& b){
 DEFINE_MATRIX_BINARY_PARAMETER_OP(IsEqualTo, ONE_PARAMETER, a = (b == t));
 template<class T>
 void BaseMatrixT<T>::is_equal_to(BaseMatrixT& b, T t){
-    apply_binary(binary::IsEqualTo<T>(p), b);
+    apply_binary(binary::IsEqualTo<T>(t), b);
 }
 
 DEFINE_MATRIX_BINARY_PARAMETER_OP(AddScalar, ONE_PARAMETER, a = b + t);
 template<class T>
-void BaseMatrixT<T>::add_scalar(BaseMatrixT& b){
+void BaseMatrixT<T>::add_scalar(BaseMatrixT& b, T t){
     apply_binary(binary::AddScalar<T>(t), b);
 }
 
+DEFINE_MATRIX_BINARY_PARAMETER_OP(SubScalar, ONE_PARAMETER, a = b - t);
+template<class T>
+void BaseMatrixT<T>::sub_scalar(BaseMatrixT& b, T t){
+    apply_binary(binary::SubScalar<T>(t), b);
+}
 
+DEFINE_MATRIX_BINARY_PARAMETER_OP(MulScalar, ONE_PARAMETER, a = b * t);
+template<class T>
+void BaseMatrixT<T>::mul_scalar(BaseMatrixT& b, T t){
+    apply_binary(binary::MulScalar<T>(t), b);
+}
 
+DEFINE_MATRIX_BINARY_PARAMETER_OP(DivScalar, ONE_PARAMETER, a = b / t);
+template<class T>
+void BaseMatrixT<T>::div_scalar(BaseMatrixT& b, T t){
+    apply_binary(binary::DivScalar<T>(t), b);
+}
 
+/*
+ * ternary operator
+ */
 
+DEFINE_MATRIX_TERNARY_OP(SoftCrossEntropy, a = -c * log(b) - (1 - c) * log(1 - b));
+template<>
+void BaseMatrixT<real>::soft_cross_entropy(BaseMatrixT& b, BaseMatrixT& c){
+    apply_ternary(ternary::SoftCrossEntropy<real>(), b, c);
+}
 
+DEFINE_MATRIX_TERNARY_OP(SoftCrossEntropyBp, a += (b - c) / (b * (1 - b)));
+template<class T>
+void BaseMatrixT<T>::soft_cross_entropy_bp(BaseMatrixT& b, BaseMatrixT& c){
+    apply_ternary(ternary::SoftCrossEntropyBp<T>(), b, c);
+}
 
+DEFINE_MATRIX_TERNARY_OP(BinaryLabelCrossEntropy, a = c > 0.5 ? -log(b) : -log(1.0 - b));
+template<>
+void BaseMatrixT<real>::binary_label_cross_entropy(BaseMatrixT& b, BaseMatrixT& c){
+    CC_CHECK_EQ(_height, b._height);
+    CC_CHECK_EQ(_height, c._height);
+    CC_CHECK_EQ(_width, b._width);
+    CC_CHECK_EQ(_width, c._width);
+
+    size_t size = _height * _width;
+    real* out = b._data;
+    real* label = b._data;
+    real* cost = _data;
+
+    for(size_t i = -0; i < size; i++){
+        cost[i] = label[i] > 0.5 ? out[i] : 1.0 - out[i];
+    }
+//    vLog(size, cost, cost);
+    for(size_t i = 0; i < size; i++){
+        cost[i] *= -1.0;
+    }
+}
+
+DEFINE_MATRIX_TERNARY_OP(BinaryLabelCrossEntropyBp, a += c > 0.5 ? -1.0/b : 1.0/(1.0-b))
+template<class T>
+void BaseMatrixT<T>::binary_label_cross_entropy_bp(BaseMatrixT& b, BaseMatrixT& c){
+    apply_ternary(ternary::BinaryLabelCrossEntropyBp<T>(), b, c);
+}
+
+DEFINE_MATRIX_TERNARY_OP(Add, a = b + c);
+template<class T>
+void BaseMatrixT<T>::add(BaseMatrixT& b, BaseMatrixT& c){
+    apply_ternary(ternary::Add<T>(), b, c);
+}
+
+DEFINE_MATRIX_TERNARY_PARAMETER_OP(Add1, TWO_PARAMETER, a = t1 * b + t2 * c);
+template<class T>
+void BaseMatrixT<T>::add(BaseMatrixT& b,
+                         T t1,
+                         BaseMatrixT& c,
+                         T t2){
+    apply_ternary(ternary::Add1<T>(t1, t2), b, c);
+}
 }//namespace math
 }//namespace ccml
