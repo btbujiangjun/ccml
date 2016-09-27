@@ -7,7 +7,7 @@
 **********************************************/
 
 #include "LightServer.h"
-#include "../utils/Logging.h"
+#include "utils/Logging.h"
 #include <unistd.h>
 #include <string.h>
 #include <fcntl.h>

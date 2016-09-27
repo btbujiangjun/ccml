@@ -7,7 +7,6 @@
 **********************************************/
 
 #include "SocketChannel.h"
-#include "../utils/Logging.h"
 #include <unistd.h>
 
 namespace ccml{
