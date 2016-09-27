@@ -228,7 +228,7 @@ int BaseMatrixT<T>::aggregate(Agg agg,
                               BaseMatrixT& b,
                               int num_rows,
                               int num_cols,
-                              MatrixOffset& ofset,
+                              MatrixOffset& offset,
                               RowVector,
                               ColVector){
     int lda = _stride;
@@ -305,10 +305,11 @@ void BaseMatrixT<real>::exp(){
 DEFINE_MATRIX_UNARY_OP(Log, a = log(a));
 template<>
 void BaseMatrixT<real>::log(){
-    vLog(_height * _width, _data, _data);
+    //vLog(_height * _width, _data, _data);
 }
 
 DEFINE_MATRIX_UNARY_OP(Sqrt, a = sqrt(a));
+template<>
 void BaseMatrixT<real>::sqrt(){
     apply_unary(unary::Sqrt<real>());
 }
@@ -354,7 +355,7 @@ void BaseMatrixT<T>::zero_at_offset(int64_t col_offset, int64_t num_columns){
 DEFINE_MATRIX_UNARY_PARAMETER_OP(Pow, ONE_PARAMETER, a = pow(a, t));
 template<>
 void BaseMatrixT<real>::pow(real t){
-    vPow(_height * _width, _data, t, _data);
+//    vPow(_height * _width, _data, t, _data);
 }
 
 DEFINE_MATRIX_UNARY_PARAMETER_OP(SubScalar, ONE_PARAMETER, a -= t);
@@ -372,25 +373,25 @@ void BaseMatrixT<T>::mul_scalar(T t){
 DEFINE_MATRIX_UNARY_PARAMETER_OP(DivScalar, ONE_PARAMETER, a /= t);
 template<class T>
 void BaseMatrixT<T>::div_scalar(T t){
-    apply_unary(unary::DivScalar<T>(p));
+    apply_unary(unary::DivScalar<T>(t));
 }
 
 DEFINE_MATRIX_UNARY_PARAMETER_OP(Assign, ONE_PARAMETER, a = t);
 template<class T>
-void BaseMetrixT<T>::assign(T t){
-    apply_unary(unary::Assign<T>(p));
+void BaseMatrixT<T>::assign(T t){
+    apply_unary(unary::Assign<T>(t));
 }
 
 DEFINE_MATRIX_UNARY_PARAMETER_OP(Add, ONE_PARAMETER, a += t);
 template<class T>
 void BaseMatrixT<T>::add(T t){
-    apply_unary(unary::Add<T>(p));
+    apply_unary(unary::Add<T>(t));
 }
 
 DEFINE_MATRIX_UNARY_PARAMETER_OP(Add2, TWO_PARAMETER, a = a * t1 + t2);
 template<class T>
 void BaseMatrixT<T>::add(T t1, T t2){
-    apply_unary(unary::ADD2<T>(t1, t2));
+    apply_unary(unary::Add2<T>(t1, t2));
 }
 
 DEFINE_MATRIX_UNARY_PARAMETER_OP(Clip, TWO_PARAMETER, a = a < t1 ? t1 : (a > t2 ? t2 : a));
@@ -399,7 +400,7 @@ void BaseMatrixT<T>::clip(T t1, T t2){
     apply_unary(unary::Clip<T>(t1, t2));
 }
 
-DEFINE_MATRI_UNARY_PARAMETER_OP(DownClip, ONE_PARAMETER, a = a > t ? a : p);
+DEFINE_MATRIX_UNARY_PARAMETER_OP(DownClip, ONE_PARAMETER, a = a > t ? a : t);
 template<class T>
 void BaseMatrixT<T>::down_clip(T t){
     apply_unary(unary::DownClip<T>(t));
@@ -408,7 +409,7 @@ void BaseMatrixT<T>::down_clip(T t){
 DEFINE_MATRIX_UNARY_PARAMETER_OP(BiggerThanScalar, ONE_PARAMETER, a = a > t ? 1.0f : 0.0f);
 template<class T>
 void BaseMatrixT<T>::bigger_than_scalar(T t){
-    apply_unary(unary::bigger_than_scalar<T>(t));
+    apply_unary(unary::BiggerThanScalar<T>(t));
 }
 
 /*
@@ -425,7 +426,7 @@ template<>
 void BaseMatrixT<real>::add(BaseMatrixT& b){
     CC_CHECK_EQ(_height, b._height);
     CC_CHECK_EQ(_width, b._width);
-    vAdd(_height * _width, _data, b, _data, _data);
+    //vAdd(_height * _width, _data, b, _data, _data);
 }
 
 template<class T>
@@ -469,15 +470,15 @@ void BaseMatrixT<T>::add_col_vector(BaseMatrixT& b){
 }
 
 template<class T>
-void BaseMatrixT<T>::add_col_vector(BaseMatrixT& b){
+void BaseMatrixT<T>::add_row_vector(BaseMatrixT& b){
     MatrixOffset offset(0, 0, 0, 0);
     int num_rows = _height;
-    int num_cols = _weight;
+    int num_cols = _width;
 
     apply_binary(binary::Add<T>(), b, num_rows, num_cols, offset, true_type(), false_type());
 }
 
-DEFINE_MATRIX_BINARY_PARAMETER_OP(ADD1, ONE_PARAMETER, a += b * t);
+DEFINE_MATRIX_BINARY_PARAMETER_OP(Add1, ONE_PARAMETER, a += b * t);
 template<class T>
 void BaseMatrixT<T>::add(BaseMatrixT& b, T t){
     apply_binary(binary::Add1<T>(t), b);
@@ -485,13 +486,13 @@ void BaseMatrixT<T>::add(BaseMatrixT& b, T t){
 
 DEFINE_MATRIX_BINARY_PARAMETER_OP(Pow, ONE_PARAMETER, a = pow(b, t));
 template<>
-void BaseMatrix<real>::pow(BaseMatrixT& b, real t){
-    vPow(_height * _width, b._data, t, _data);
+void BaseMatrixT<real>::pow(BaseMatrixT& b, real t){
+//    vPow(_height * _width, b._data, t, _data);
 }
 
 DEFINE_MATRIX_BINARY_PARAMETER_OP(Add2, TWO_PARAMETER, a = t1 * a + t2 * b);
 template<class T>
-void BaseMatrixT<T>::add_(BaseMatrixT& b, T t1, T t2){
+void BaseMatrixT<T>::add(BaseMatrixT& b, T t1, T t2){
     apply_binary(binary::Add2<T>(t1, t2), b);
 }
 
@@ -501,7 +502,7 @@ void BaseMatrixT<T>::add_bias(BaseMatrixT& b, T scale){
     int num_rows = _height;
     int num_cols = _width;
 
-    apply_binary(binary::Add1<T>(scale), b, num_rows, num_cols, offset, true_type, false_type());
+    apply_binary(binary::Add1<T>(scale), b, num_rows, num_cols, offset, true_type(), false_type());
 }
 
 DEFINE_MATRIX_BINARY_OP(Sub , a -= b);
@@ -531,7 +532,7 @@ void BaseMatrixT<T>::relu_derivative(BaseMatrixT& b){
 DEFINE_MATRIX_BINARY_OP(SoftRelu, const T THRESHOLD = 40.0;\
     b = log(1.0 + exp(( a > THRESHOLD) ? THRESHOLD : ( (a < -THRESHOLD) ? -THRESHOLD : a))));
 template<>
-void BaseMatrixT<real>::softrelu(BaseMatrixT& b){
+void BaseMatrixT<real>::soft_relu(BaseMatrixT& b){
     apply_binary(binary::SoftRelu<real>(), b);
 }
 
@@ -545,19 +546,15 @@ void BaseMatrixT<real>::soft_relu_derivative(BaseMatrixT& b){
 DEFINE_MATRIX_BINARY_PARAMETER_OP(Brelu, TWO_PARAMETER, b = a > t1 ? a : t1;\
         b = b < t2 ? b : t2);
 template<class T>
-void BaseMatrixT<T>:brelu(BaseMatrixT& b){
-    int t1 = 0;
-    int t2 = 24;
-
+void BaseMatrixT<T>::brelu(BaseMatrixT& b){
+    int t1 = 0, t2 = 24;
     apply_binary(binary::Brelu<T>(t1, t2), b);
 }
 
-DEFINE_MATRIX_BINARY_PAREMATER_OP(BreluDerivative, TWO_PARAMETER, a *= (b > t1 && b < t2>) ? 1.0 : 0.0);
+DEFINE_MATRIX_BINARY_PARAMETER_OP(BreluDerivative, TWO_PARAMETER, a *= (b > t1 && b < t2) ? 1.0 : 0.0);
 template<class T>
 void BaseMatrixT<T>::brelu_derivative(BaseMatrixT& b){
-    int p1 = 0;
-    int p2 = 24;
-    
+    int t1 = 0, t2 = 24;
     apply_binary(binary::BreluDerivative<T>(t1, t2), b);
 }
 
@@ -576,16 +573,16 @@ void BaseMatrixT<T>::square_derivative(BaseMatrixT& b){
 DEFINE_MATRIX_BINARY_OP(Tanh, b = 2.0 / (1.0 + exp(-2 * b)) - 1.0);
 template<>
 void BaseMatrixT<real>::tanh(BaseMatrixT& b){
-    apply_bianry(binary::Tanh<T>(), b);
+    apply_binary(binary::Tanh<real>(), b);
 }
 
 DEFINE_MATRIX_BINARY_OP(TanhDerivative, a *= 1- b * b);
-template<class t>
+template<class T>
 void BaseMatrixT<T>::tanh_derivative(BaseMatrixT& b){
     apply_binary(binary::TanhDerivative<T>(), b);
 }
 
-DEFINE_MATRIX_BINARY_PARAMATER_OP(ScaledTanh, TWO_PARAMETER, b = t1 * (2.0 / (1.0 + exp(-2 * t2 * a)) - 1.0));
+DEFINE_MATRIX_BINARY_PARAMETER_OP(ScaledTanh, TWO_PARAMETER, b = t1 * (2.0 / (1.0 + exp(-2 * t2 * a)) - 1.0));
 template<>
 void BaseMatrixT<real>::scaled_tanh(BaseMatrixT& b, real t1, real t2){
     apply_binary(binary::ScaledTanh<real>(t1, t2), b);
@@ -620,7 +617,7 @@ template<>
 void BaseMatrixT<real>::sigmoid(BaseMatrixT& b){
     size_t num_samples = this->_height;
     size_t dim = this->_width;
-    CC_CHECK_EQ(b._weigth, num_samples);
+    CC_CHECK_EQ(b._height, num_samples);
     CC_CHECK_EQ(b._width, dim);
     const real* in = this->_data;
     real* out = b._data;
@@ -629,11 +626,11 @@ void BaseMatrixT<real>::sigmoid(BaseMatrixT& b){
     const float THRESHOLD_MAX = 13.0;
     for(size_t i = 0; i < num_samples * dim; i++){
         real temp = in[i];
-        temp = (temp < THRESHOLD_MIN) ? THRESHOLD : ((temp > THRESHOLD_MAX) ? THRESHOLD_MAX : THRESHOLD_MAX : temp);
+        temp = (temp < THRESHOLD_MIN) ? THRESHOLD_MIN : ((temp > THRESHOLD_MAX) ? THRESHOLD_MAX : temp);
         out[i] = -temp;
     }
 
-    vExp(num_samples * dim, out, out);//out = exp(out)
+    //vExp(num_samples * dim, out, out);//out = exp(out)
 
     for(size_t i = 0; i < num_samples * dim; i++){
         out[i] = 1 / (1 + out[1]);
@@ -646,18 +643,55 @@ void BaseMatrixT<T>::sigmoid_derivative(BaseMatrixT& b){
     apply_binary(binary::SigmoidDerivative<T>(), b);
 }
 
+DEFINE_MATRIX_BINARY_OP(ExpDerivative, a *= b);
+template<class T>
+void BaseMatrixT<T>::exp_derivative(BaseMatrixT& b){
+    apply_binary(binary::exp_derivate<T>(), b);
+}
 
+DEFINE_MATRIX_BINARY_OP(Sign, b = a > 0.0f ? 1.0f : -1.0f);
+template<class T>
+void BaseMatrixT<T>::sign(BaseMatrixT& b){
+    apply_binary(binary::Sign<T>(), b);
+}
 
+DEFINE_MATRIX_BINARY_OP(Exp, a = exp(b));
+template<>
+void BaseMatrixT<real>::exp(BaseMatrixT& b){
+    apply_binary(binary::Exp<real>(), b);
+}
 
+DEFINE_MATRIX_BINARY_OP(Log, a = log(b));
+template<>
+void BaseMatrixT<real>::log(BaseMatrixT& b){
+    //vLog(_height * _width, b_data, _data);
+}
 
+DEFINE_MATRIX_BINARY_OP(Sqrt, a = sqrt(b));
+template<>
+void BaseMatrixT<real>::sqrt(BaseMatrixT& b){
+    apply_binary(binary::Sqrt<real>(), b);
+}
 
+DEFINE_MATRIX_BINARY_OP(InvSqrt, a = 1.0f / sqrt(b));
+template<>
+void BaseMatrixT<real>::inv_sqrt(BaseMatrixT& b){
+    CC_CHECK_EQ(_height, b._height);
+    CC_CHECK_EQ(_width, b._width);
+    //vInvSqrt(_height * _width, b._data, _data);
+}
 
+DEFINE_MATRIX_BINARY_PARAMETER_OP(IsEqualTo, ONE_PARAMETER, a = (b == t));
+template<class T>
+void BaseMatrixT<T>::is_equal_to(BaseMatrixT& b, T t){
+    apply_binary(binary::IsEqualTo<T>(p), b);
+}
 
-
-
-
-
-
+DEFINE_MATRIX_BINARY_PARAMETER_OP(AddScalar, ONE_PARAMETER, a = b + t);
+template<class T>
+void BaseMatrixT<T>::add_scalar(BaseMatrixT& b){
+    apply_binary(binary::AddScalar<T>(t), b);
+}
 
 
 
