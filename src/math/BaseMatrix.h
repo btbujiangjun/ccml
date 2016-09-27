@@ -168,7 +168,18 @@ public:
                          MatrixOffset& offset);
 
 
-    template<class Agg,class Op, class Saver, class RowVector, class ColVector>
+    template<class Agg, class Op, class Saver, class RowVector, class ColVector>
+    int aggregate(Agg agg,
+                  Op op,
+                  Saver sv,
+                  BaseMatrixT& b,
+                  int num_rows,
+                  int num_cols,
+                  MatrixOffset& offset,
+                  RowVector,
+                  ColVector);
+
+    template<class Agg, class Op, class Saver, class RowVector, class ColVector>
     int aggregate(Agg agg,
                   Op op,
                   Saver sv,
@@ -212,7 +223,7 @@ public:
     void exp(BaseMatrixT& b);
     void exp_derivative(BaseMatrixT& b);
     void pow(T t);
-    void pow(BaseMatrixT& b);
+    void pow(BaseMatrixT& b, T t);
     void log();
     void log(BaseMatrixT& b);
     void sqrt();
@@ -230,10 +241,31 @@ public:
     void mul_scalar(T t);
     void div_scalar(T t);
     void assign(T t);
+
+    /*
+     * this += p
+     */
     void add(T t);
+
+    /*
+     * this = this*t1 + t2
+     */
+    void add(T t1, T t2);
+
+    /*
+     * this += b
+     */
     void add(BaseMatrixT& b);
+
+    /*
+     * this = this + b*t
+     */
     void add(BaseMatrixT& b, T t);
-    void add(BaseMatrixT& b, T t1, T t2);
+
+    /*
+     * this = t1*this + t2*b
+     */
+    void add(BaseMatrixT&b, T t1, T t2);
     void add_at_offset(BaseMatrixT& b, int64_t col_offset);
     void clip(T t1, T t2);
     void down_clip(T t);
@@ -303,8 +335,8 @@ public:
     /*
      * b = 1.0f / (1.0f + exp(-this))
      */
-    void signmoid(BaseMatrixT& b);
-    void signmoid_derivative(BaseMatrixT& b);
+    void sigmoid(BaseMatrixT& b);
+    void sigmoid_derivative(BaseMatrixT& b);
 
     void add_scalar(BaseMatrixT& b, T t);
     void sub_scalar(BaseMatrixT& b, T t);
