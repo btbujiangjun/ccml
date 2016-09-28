@@ -769,5 +769,57 @@ void BaseMatrixT<T>::add(BaseMatrixT& b,
                          T t2){
     apply_ternary(ternary::Add1<T>(t1, t2), b, c);
 }
+
+DEFINE_MATRIX_TERNARY_OP(Sub, a = c - c);
+template<class T>
+void BaseMatrixT<T>::sub(BaseMatrixT& b, BaseMatrixT& c){
+    apply_ternary(ternary::Sub<T>(), b, c);
+}
+
+DEFINE_MATRIX_TERNARY_PARAMETER_OP(Sub1, TWO_PARAMETER, a = t1 * b - t2 * c);
+template<class T>
+void BaseMatrixT<T>::sub(BaseMatrixT& b,
+                         T t1,
+                         BaseMatrixT& c,
+                         T t2){
+    apply_ternary(ternary::Sub1<T>(t1, t2), b, c);
+}
+
+DEFINE_MATRIX_TERNARY_OP(Add2, a += b + c);
+template<class T>
+void BaseMatrixT<T>::add2(BaseMatrixT& b, BaseMatrixT& c){
+    apply_ternary(ternary::Add2<T>(), b, c);
+}
+
+DEFINE_MATRIX_TERNARY_PARAMETER_OP(Add3, THREE_PARAMETER, a = t1 * a + t2 * b + t3 * c);
+template<class T>
+void BaseMatrixT<T>::add2(BaseMatrixT& b,
+                          BaseMatrixT& c,
+                          T t1,
+                          T t2,
+                          T t3){
+    apply_ternary(ternary::Add3<T>(t1, t2, t3), b, c);
+}
+
+DEFINE_MATRIX_QUATERNARY_PARAMETER_OP(SgdUpdate, THREE_PARAMETER, c = t2 * c - t1 * (b + t3 * a));
+template<class T>
+void BaseMatrixT<T>::sgd_update(BaseMatrixT& b,//grad
+                                BaseMatrixT& c,//mom
+                                BaseMatrixT& d, //lr
+                                T t1,//learning
+                                T t2,//momentum
+                                T t3){//decayrate
+    apply_quaternary(quaternary::SgdUpdate<T>(t1, t2, t3), b, c, d);
+}
+
+DEFINE_MATRIX_BINARY_PARAMATER_OP(ApplyL1, ONE_PARAMETER, T lambda = t * b; a = (a > lambda) ? (a -lambda) : ((a < -lambda) ? (a + lamdba) : 0));
+template<class T>
+void BaseMatrixT<T>::apply_l1(BaseMatrixT<T>& lr,
+                              T learning_rate,
+                              T decay_rate){
+    apply_binary(binary::ApplyL1<T>(learning_rate * decay_rate), lr);
+}
+
+
 }//namespace math
 }//namespace ccml
