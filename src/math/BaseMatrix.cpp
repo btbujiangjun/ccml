@@ -812,13 +812,113 @@ void BaseMatrixT<T>::sgd_update(BaseMatrixT& b,//grad
     apply_quaternary(quaternary::SgdUpdate<T>(t1, t2, t3), b, c, d);
 }
 
-DEFINE_MATRIX_BINARY_PARAMATER_OP(ApplyL1, ONE_PARAMETER, T lambda = t * b; a = (a > lambda) ? (a -lambda) : ((a < -lambda) ? (a + lamdba) : 0));
+DEFINE_MATRIX_BINARY_PARAMETER_OP(ApplyL1, ONE_PARAMETER, T lambda = t * b; a = (a > lambda) ? (a -lambda) : ((a < -lambda) ? (a + lambda) : 0));
 template<class T>
 void BaseMatrixT<T>::apply_l1(BaseMatrixT<T>& lr,
                               T learning_rate,
                               T decay_rate){
     apply_binary(binary::ApplyL1<T>(learning_rate * decay_rate), lr);
 }
+
+template<>
+void BaseMatrixT<real>::apply_l1(BaseMatrixT& lr,
+                                 real learning_rate,
+                                 real decay_rate){
+    ///todo
+    //simd::decay_l1(this->_data, this->_data, lr._data, learning_rate * decay_rate, _height * width);
+}
+
+DEFINE_MATRIX_UNARY_PARAMETER_OP(ApplyL1, ONE_PARAMETER, T lambda = t; a = (a > lambda) ? (a - lambda) : (a < -lambda) ? (a + lambda) : 0);
+template<class T>
+void BaseMatrixT<T>::apply_l1(T learning_rate, T decay_rate){
+    apply_unary(unary::ApplyL1<T>(learning_rate * decay_rate));
+}
+
+template<>
+void BaseMatrixT<real>::apply_l1(real learning_rate, real decay_rate){
+    ///todo
+    //simd::decay_l1(this-_data, this->_data, learning_rate * decay_rate, _height * _width);
+}
+
+DEFINE_MATRIX_BINARY_PARAMETER_OP(ApplyL2, ONE_PARAMETER, a *= (1.0f /(1.0f + t * b)));
+template<class T>
+void BaseMatrixT<T>::apply_l2(BaseMatrixT& lr,
+                              T learning_rate,
+                              T decay_rate){
+    size_t size = this->_height * this->_width;
+    T decay = learning_rate * decay_rate;
+    for(size_t j = 0; j < size; j++){
+        this->_data[j] *= 1.0f /(1.0f + decay * lr._data[j]);
+    }
+}
+
+template<class T>
+void BaseMatrixT<T>::apply_l2(T learning_rate, T decay_rate){
+    BaseMatrixT<T>::mul_scalar(1.0f / (1.0f + learning_rate * decay_rate));
+}
+
+DEFINE_MATRIX_BINARY_OP(DotMul, a *= b);
+template<class T>
+void BaseMatrixT<T>::dot_mul(BaseMatrixT& b){
+    apply_binary(binary::DotMul<T>(), b);
+}
+
+DEFINE_MATRIX_TERNARY_OP(DotMul, a = b * c);
+template<class T>
+void BaseMatrixT<T>::dot_mul(BaseMatrixT& b, BaseMatrixT& c){
+    apply_ternary(ternary::DotMul<T>(), b, c);
+}
+
+DEFINE_MATRIX_TERNARY_OP(DotDiv, a = (b == 0.0) ? 0.0 : b / c);
+template<class T>
+void BaseMatrixT<T>::dot_div(BaseMatrixT& b, BaseMatrixT& c){
+    apply_ternary(ternary::DotDiv<T>(), b ,c);
+}
+
+DEFINE_MATRIX_TERNARY_PARAMETER_OP(DotDiv2P, TWO_PARAMETER, a = (b + t1)/(c + t2));
+template<class T>
+void BaseMatrixT<T>::dot_div(BaseMatrixT& b,
+                             BaseMatrixT& c,
+                             T t1,
+                             T t2){
+    apply_ternary(ternary::DotDiv2P<real>(t1, t2), b, c);
+}
+
+DEFINE_MATRIX_QUATERNARY_OP(RankLoss, const T THRESHOLD = 40.0; a = b - c; a = (a > THRESHOLD) ? THRESHOLD : ((a < -THRESHOLD) ? -THRESHOLD : a); a = log(1 + exp(a)) - a * d);
+template<>
+void BaseMatrixT<real>::rank_loss(BaseMatrixT& b,
+                                  BaseMatrixT& c,
+                                  BaseMatrixT& d){
+    apply_quaternary(quaternary::RankLoss<real>(), b, c, d);
+}
+
+DEFINE_MATRIX_QUATERNARY_OP(RankLossBp, const T THRESHOLD = 40.0; a = b - c; a = (a > THRESHOLD) ? THRESHOLD : ((a < -THRESHOLD) ? -THRESHOLD : a); a = exp(a); a = (a / (1 + a) - d));
+template<>
+void BaseMatrixT<real>::rank_loss_bp(BaseMatrixT& b,
+                                     BaseMatrixT& c,
+                                     BaseMatrixT& d){
+    apply_quaternary(quaternary::RankLossBp<real>(), b, c, d);
+}
+
+DEFINE_MATRIX_TERNARY_OP(LogisticRegressionLoss, const T THRESHOLD = 40.0; T x = (b > THRESHOLD) ? THRESHOLD : (b < -THRESHOLD) ? -THRESHOLD : b; a = log(1 + exp(x)) - c * x);
+template<>
+void BaseMatrixT<real>::logistic_regression_loss(BaseMatrixT& b, BaseMatrixT& c){
+    apply_ternary(ternary::LogisticRegressionLoss<real>(), b, c);
+}
+
+DEFINE_MATRIX_TERNARY_OP(LogisticRegressionLossBp, const T THRESHOLD = 40.0; T x = (b > THRESHOLD) ? THRESHOLD : (b < - THRESHOLD) ? -THRESHOLD : b; x = exp(x); a = x /(1 + x) -c);
+template<>
+void BaseMatrixT<real>::logistic_regression_loss_bp(BaseMatrixT& b, BaseMatrixT& c){
+    apply_ternary(ternary::LogisticRegressionLossBp<real>(), b, c);
+}
+
+DEFINE_MATRIX_TERNARY_OP(BiggerThan, a = (b > c) ? 1.0f : 0.0f);
+template<class T>
+void BaseMatrixT<T>::bigger_than(BaseMatrixT& b, BaseMatrixT& c){
+    apply_ternary(ternary::BiggerThan<T>(), b, c);
+}
+
+
 
 
 }//namespace math
