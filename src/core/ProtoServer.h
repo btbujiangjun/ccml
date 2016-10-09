@@ -87,6 +87,7 @@ void ProtoServer::register_service_function_ex(const std::string& function_name,
         std::string str(message_reader->get_next_block_length(), 0);
         message_reader->read_next_block(&str[0]);
         CC_CHECK(request.ParseFromString(str));
+
         auto pcob = [callback](const google::protobuf::MessageLite& response, const std::vector<iovec>& output_iovs){
             std::string out;
             CC_CHECK(response.SerializeToString(&out));
@@ -95,14 +96,14 @@ void ProtoServer::register_service_function_ex(const std::string& function_name,
             iovs.insert(iovs.end(), output_iovs.begin(), output_iovs.end());
             callback(iovs);
         };
+
         func(request, std::move(message_reader), pcob);
     };
     register_service_function_implement(function_name, f);
 }
 
 template <class T>
-void ProtoServer::register_service_function(const std::string& function_name,
-                                            std::function<void(const T&, ProtoResponseCallback callback)> func){
+void ProtoServer::register_service_function(const std::string& function_name, std::function<void(const T&, ProtoResponseCallback callback)> func){
     auto f = [func](std::unique_ptr<MessageReader> message_reader, ResponseCallback callback){
         T request;
         std::string str(message_reader->get_next_block_length(), 0);
