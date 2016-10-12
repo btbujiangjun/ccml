@@ -1,9 +1,10 @@
 /*********************************************
 * Author: Jun Jiang - jiangjun4@sina.com
-* Last modified:	2016-08-31 15:02
-* Filename:		Logging.cpp
+* Created: 2016-10-10 11:32
+* Last modified: 2016-10-10 11:32
+* Filename: Logging.cpp
 * Description: 
-*********************************************/
+**********************************************/
 
 #include "Logging.h"
 #include "stdlib.h"
@@ -15,7 +16,6 @@
 
 namespace ccml{
 namespace logging{
-
 
 static std::string join(const std::string& part1, const std::string& part2){
     const char sep = '/';
@@ -111,6 +111,23 @@ static void initialize_log_fds(char* argc){
 }
 
 
+void initialize_logging(int argc, char** argv){
+    initialize_log_fds(argv[0]);
+}
+
+void set_min_log_level(int level){
+    g_log_min_level = level;
+}
+
+void install_failure_function(void (*callback)()){
+    g_failure_function_ptr = callback;
+}
+
+void install_failure_writer(void(*callback)(const char*, int)){
+    (void)(callback);
+}
+
+
 LogMessage::LogMessage(const char* name,
                        int line,
                        int severity) : 
@@ -138,6 +155,34 @@ LogMessageFatal::~LogMessageFatal(){
     generate_log_message();
     g_failure_function_ptr();
 }
+
+/*
+ glog interface
+
+#ifndef CCML_USED_GLOG
+#else // glog interface
+void initialize_logging(int argc, char** argv){
+    (void)(argc);
+    if(!getenv("GLOG_logtostderr")){
+        google::LogToStderr();
+    }
+    google::InstallFailureSignalHandler();
+    google::InitGoogleLogging(argv[0]);
+}
+
+void set_min_log_level(int level){
+    FLAGS_minloglevel = level;
+}
+
+void install_failure_function(void (*callback)()){
+    google::InstallFailureFunction(callback);
+}
+
+void install_failure_writer(void(*callback)(const char*, int)){
+    google::IntallFailureWriter(callback);
+}
+#endif
+*/
 
 
 }//namespace logging
