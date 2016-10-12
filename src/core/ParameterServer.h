@@ -11,6 +11,8 @@
 
 #include "ProtoServer.h"
 #include "Locks.h"
+#include <unordered_map>
+
 
 namespace ccml{
 namespace core{
