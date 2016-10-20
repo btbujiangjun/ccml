@@ -6,9 +6,14 @@
 * Description: 
 **********************************************/
 
+#include <algorithm>
+#include <mutex>
 #include "Util.h"
 #include "Logging.h"
 #include "Version.h"
+#include "CommandLineParser.h"
+
+CC_DEFINE_int32(seed, 1, "random number seed. 0 for srand(time)");
 
 namespace ccml{
 namespace utils{
@@ -20,14 +25,14 @@ static bool g_initialized = false;
 static InitFuncList* g_init_funcs = nullptr;
 static std::once_flag  g_once_flag;
 
-void register_init_function(std::funciton<void()>, func, int priority){
+void register_init_function(std::function<void()> func, int priority){
     if(g_initialized){
         LOG(FATAL) << "register_init_function() should only called before init_main().";
     }
-    if(!g_initfuncs){
-        g_initfuncs = new InitFuncList();
+    if(!g_init_funcs){
+        g_init_funcs = new InitFuncList();
     }
-    g_initfuncs->push_back(std::make_pair(priority, func));
+    g_init_funcs->push_back(std::make_pair(priority, func));
 }
 
 
@@ -57,7 +62,7 @@ void init_main(int argc, char** argv){
 
     CC_CHECK_EQ(argc, 1) << "Unkown commandline argument:" << argv[0];
 
-    initialize_logging(argc, argv);
+    logging::initialize_logging(argc, argv);
     // install_layer_stack_tracer();
 
     std::string line;

@@ -13,12 +13,14 @@
 namespace ccml{
 namespace utils{
 
+CC_DEFINE_bool(layer_stack_error_only_current_thread, true, "Dump current thread or whole process layer stack when signal error occurred, true means only dump current thread layer stack.")
+
 CustomStackTrace<std::string> g_layer_stack_trace;
 
 static std::mutex g_layer_stack_trace_metux;
 
 void install_layer_stack_tracer(){
-    logging::install_failure_writer([](const char* data, int size)){
+    logging::install_failure_writer([](const char* data, int size){
         std::lock_guard<std::mutex> guard(g_layer_stack_trace_metux);
         if(!g_layer_stack_trace.empty()){
             size_t current_tid = -1UL;
@@ -37,8 +39,9 @@ void install_layer_stack_tracer(){
                 std::cerr << layer_name << ",";
             }, FLAGS_layer_stack_error_only_current_thread);
             std::cerr << std::endl;
-    }
-    std::cerr.write(data, size);
+        }
+        std::cerr.write(data, size);
+    });
 }
 
 }//namespace utils
