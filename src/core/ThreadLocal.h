@@ -9,6 +9,11 @@
 #ifndef CCML_CORE_THREADLOCAL_H
 #define CCML_CORE_THREADLOCAL_H
 
+#include <mutex>
+#include <pthread.h>
+#include "utils/Logging.h"
+
+
 namespace ccml{
 namespace core{
 

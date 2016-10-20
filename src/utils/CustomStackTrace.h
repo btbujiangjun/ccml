@@ -11,10 +11,13 @@
 #define CCML_UTILS_CUSTOMSTACKTRACE_H
 
 #include <stack>
-
+#include <thread>
+#include <functional>
+#include <unordered_map>
+#include "core/ThreadLocal.h"
 
 namespace ccml{
-namespace{
+namespace utils{
 
 template<class T>
 class CustomStackTrace{
@@ -52,7 +55,7 @@ public:
     void dump(const DumpCallback& callback, bool only_current_thread = false){
         std::lock_guard<std::mutex> g(this->_mutex);
         for(auto p : this->_stack_buffer){
-            std::thread:id tid = p.first;
+            std::thread::id tid = p.first;
             if(only_current_thread && tid != std::this_thread::get_id()){
                 continue;
             }
@@ -79,7 +82,7 @@ public:
 
 private:
     template<typename TYPE>
-    inline TYPE& get_threadlocal(ThreadLocal<TYPE>& threadlocal, std::unordered_map<std::thread::id, TYPE*>& buffer){
+    inline TYPE& get_threadlocal(ccml::core::ThreadLocal<TYPE>& threadlocal, std::unordered_map<std::thread::id, TYPE*>& buffer){
         TYPE* retv = threadlocal.get(false);
         if(retv){
             return *retv;
@@ -104,8 +107,8 @@ private:
     mutable std::mutex _mutex;
     std::unordered_map<std::thread::id, std::stack<T>*> _stack_buffer;
     std::unordered_map<std::thread::id, bool*> _pushing_buffer;
-    ThreadLocal<bool> _is_pushing;
-    ThreadLocal<std::stack<T>>_log_stack;
+    ccml::core::ThreadLocal<bool> _is_pushing;
+    ccml::core::ThreadLocal<std::stack<T>>_log_stack;
 };//class CustomStackTrace
 
 extern CustomStackTrace<std::string> g_layer_stack_trace;

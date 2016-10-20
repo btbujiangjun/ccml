@@ -54,43 +54,43 @@ struct CommandLineFlagRegister{
 };
 
 
-#define CCML_DEFINE_variable(type, name, default_value, text) \
+#define CC_DEFINE_variable(type, name, default_value, text) \
     type FLAGS_##name = default_value;\
     namespace ccml_utils{\
         ccml::utils::CommandLineFlagRegister<type> flags_var_##name(#name, &FLAGS_##name, text);\
     }//namespace ccml_utils_flags
 
-#define CCML_DEFINE_int32(name, default_value, text) \
-    CCML_DEFINE_variable(int32_t, name, default_value, text)
+#define CC_DEFINE_int32(name, default_value, text) \
+    CC_DEFINE_variable(int32_t, name, default_value, text)
 
-#define CCML_DEFINE_bool(name, default_value, text) \
-    CCML_DEFINE_variable(bool, name, default_value, text)
+#define CC_DEFINE_bool(name, default_value, text) \
+    CC_DEFINE_variable(bool, name, default_value, text)
 
-#define CCML_DEFINE_string(name, default_value, text) \
-    CCML_DEFINE_variable(std::string, name, default_value, text)
+#define CC_DEFINE_string(name, default_value, text) \
+    CC_DEFINE_variable(std::string, name, default_value, text)
 
-#define CCML_DEFINE_double(name, default_value, text) \
-    CCML_DEFINE_variable(double, name, default_value, text)
+#define CC_DEFINE_double(name, default_value, text) \
+    CC_DEFINE_variable(double, name, default_value, text)
 
-#define CCML_DEFINE_int64(name, default_value, text) \
-    CCML_DEFINE_variable(int64_t, name, default_value, text)
+#define CC_DEFINE_int64(name, default_value, text) \
+    CC_DEFINE_variable(int64_t, name, default_value, text)
 
-#define CCML_DEFINE_uint64(name, default_value, text) \
-    CCML_DEFINE_variable(uint64_t, name, default_value, text)
+#define CC_DEFINE_uint64(name, default_value, text) \
+    CC_DEFINE_variable(uint64_t, name, default_value, text)
 
-#define CCML_DECLARE_variable(type, name) extern type FLAGS_##name;
+#define CC_DECLARE_variable(type, name) extern type FLAGS_##name;
 
-#define CCML_DECLARE_int32(name) CCML_DECLARE_variable(int32_t, name)
+#define CC_DECLARE_int32(name) CC_DECLARE_variable(int32_t, name)
 
-#define CCML_DECLARE_bool(name) CCML_DECLARE_variable(bool, name)
+#define CC_DECLARE_bool(name) CC_DECLARE_variable(bool, name)
 
-#define CCML_DECLARE_string(name) CCML_DECLARE_variable(std::string, name)
+#define CC_DECLARE_string(name) CC_DECLARE_variable(std::string, name)
 
-#define CCML_DECLARE_double(name) CCML_DECLARE_variable(double, name)
+#define CC_DECLARE_double(name) CC_DECLARE_variable(double, name)
 
-#define CCML_DECLARE_int64(name) CCML_DECLARE_variable(int64_t, name)
+#define CC_DECLARE_int64(name) CC_DECLARE_variable(int64_t, name)
 
-#define CCML_DECLARE_uint64(name) CCML_DECLARE_variable(uint64_t, name)
+#define CC_DECLARE_uint64(name) CC_DECLARE_variable(uint64_t, name)
 
 
 

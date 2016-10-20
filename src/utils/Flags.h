@@ -8,6 +8,9 @@
 
 #pragma once
 
-#include "CommandLineParse.h"
+#include "CommandLineParser.h"
 
-#CC_DECLARE_bool()
+CC_DECLARE_int32(port);
+CC_DECLARE_int32(num_ports);
+CC_DECLARE_int32(num_ports_for_sparse);
+CC_DECLARE_string(nics);

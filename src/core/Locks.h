@@ -56,6 +56,19 @@ protected:
      pthread_rwlock_t _rwlock;
 };//class RWLock
 
+class ReadLockGuard{
+public:
+    explicit ReadLockGuard(RWLock& rwlock) : _rwlock(&rwlock){
+        _rwlock->lock_shared();
+    }
+
+    ~ReadLockGuard(){
+        _rwlock->unlock();
+    }
+private:
+    RWLock* _rwlock;
+}; //class ReadLockGuard
+
 class LockedCondition : public std::condition_variable{
 public:
     template <class T>
